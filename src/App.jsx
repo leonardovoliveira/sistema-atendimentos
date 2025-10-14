@@ -6,7 +6,7 @@ import Extrato from './pages/Extrato'
 import Relatorios from './pages/Relatorios'
 import './App.css'
 
-function Navigation() {
+function Navigation({ toggleDarkMode, darkMode }) {
   const location = useLocation()
   
   const isActive = (path) => {
@@ -22,6 +22,12 @@ function Navigation() {
               <h1 className="text-xl font-bold text-gray-900">Sistema de Atendimentos</h1>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              <button
+                onClick={toggleDarkMode}
+                className="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors"
+              >
+                {darkMode ? "Light Mode" : "Dark Mode"}
+              </button>
               <Link
                 to="/"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
@@ -65,6 +71,29 @@ function Navigation() {
 
 function App() {
   const [atendimentos, setAtendimentos] = useState([])
+  const [darkMode, setDarkMode] = useState(false)
+
+  // Carregar tema do localStorage ao iniciar
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme")
+    if (savedTheme) {
+      setDarkMode(JSON.parse(savedTheme))
+    }
+  }, [])
+
+  // Salvar tema no localStorage sempre que houver alteração
+  useEffect(() => {
+    localStorage.setItem("theme", JSON.stringify(darkMode))
+    if (darkMode) {
+      document.documentElement.classList.add("dark")
+    } else {
+      document.documentElement.classList.remove("dark")
+    }
+  }, [darkMode])
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode)
+  }
 
   // Carregar dados do localStorage ao iniciar
   useEffect(() => {
@@ -75,14 +104,14 @@ function App() {
   }, [])
 
   // Salvar dados no localStorage sempre que houver alteração
-  useEffect(() => {
-    localStorage.setItem('atendimentos', JSON.stringify(atendimentos))
+  useEffect(() => {    console.log("Salvando no localStorage:", atendimentos);
+    localStorage.setItem("atendimentos", JSON.stringify(atendimentos));
   }, [atendimentos])
 
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
+      <div className={`min-h-screen ${darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-50"}`}>
+        <Navigation toggleDarkMode={toggleDarkMode} darkMode={darkMode} />
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <Routes>
             <Route path="/" element={<Dashboard atendimentos={atendimentos} />} />
