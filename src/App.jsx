@@ -14,17 +14,17 @@ function Navigation({ toggleDarkMode, darkMode }) {
   }
 
   return (
-    <nav className="bg-white border-b border-gray-200 shadow-sm">
+      <nav className="bg-background border-b border-border shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">Sistema de Atendimentos</h1>
+              <h1 className="text-xl font-bold text-foreground">Sistema de Atendimentos</h1>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <button
                 onClick={toggleDarkMode}
-                className="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors"
+                className="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors border-transparent text-muted-foreground hover:border-muted hover:text-foreground"
               >
                 {darkMode ? "Light Mode" : "Dark Mode"}
               </button>
@@ -32,8 +32,8 @@ function Navigation({ toggleDarkMode, darkMode }) {
                 to="/"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                   isActive('/')
-                    ? 'border-blue-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    ? 'border-blue-500 text-foreground'
+                    : 'border-transparent text-muted-foreground hover:border-muted hover:text-foreground'
                 }`}
               >
                 <Home className="w-4 h-4 mr-2" />
@@ -43,8 +43,8 @@ function Navigation({ toggleDarkMode, darkMode }) {
                 to="/extrato"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                   isActive('/extrato')
-                    ? 'border-blue-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    ? 'border-blue-500 text-foreground'
+                    : 'border-transparent text-muted-foreground hover:border-muted hover:text-foreground'
                 }`}
               >
                 <FileText className="w-4 h-4 mr-2" />
@@ -54,8 +54,8 @@ function Navigation({ toggleDarkMode, darkMode }) {
                 to="/relatorios"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                   isActive('/relatorios')
-                    ? 'border-blue-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    ? 'border-blue-500 text-foreground'
+                    : 'border-transparent text-muted-foreground hover:border-muted hover:text-foreground'
                 }`}
               >
                 <BarChart3 className="w-4 h-4 mr-2" />

@@ -50,7 +50,7 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
 
   if (isEditando) {
     return (
-      <tr key={atendimento.id} className="bg-blue-50">
+      <tr key={atendimento.id} className="bg-accent">
         <td className="px-3 py-2">
           <Input
             type="date"
@@ -201,7 +201,7 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
   }
 
   return (
-    <tr key={atendimento.id} className="hover:bg-gray-50 transition-colors">
+    <tr key={atendimento.id} className="hover:bg-accent transition-colors">
       <td className="px-3 py-2 text-sm">
         {new Date(atendimento.data_atendimento).toLocaleDateString('pt-BR')}
       </td>
@@ -213,7 +213,7 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
       <td className="px-3 py-2 text-sm">{atendimento.numero_os}</td>
       <td className="px-3 py-2 text-sm">{atendimento.nome_cliente}</td>
       <td className="px-3 py-2 text-sm">
-        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+        <span className="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
           {atendimento.plataforma}
         </span>
       </td>
@@ -241,9 +241,9 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
       </td>
       <td className="px-3 py-2 text-sm">
         <span className={`px-2 py-1 rounded text-xs font-medium ${
-          atendimento.status === 'Pago' ? 'bg-green-100 text-green-800' :
-          atendimento.status === 'Aguardando Pagamento' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-gray-100 text-gray-800'
+          atendimento.status === 'Pago' ? 'bg-green-100/10 text-green-400' :
+          atendimento.status === 'Aguardando Pagamento' ? 'bg-yellow-100/10 text-yellow-400' :
+          'bg-muted text-muted-foreground'
         }`}>
           {atendimento.status}
         </span>
@@ -332,8 +332,8 @@ function Extrato({ atendimentos, setAtendimentos }) {
   return (
     <div className="px-4 py-6 space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-gray-900">Extrato de Atendimentos</h2>
-        <p className="mt-1 text-sm text-gray-500">Gerencie todos os seus atendimentos e ordens de serviço</p>
+        <h2 className="text-3xl font-bold text-foreground">Extrato de Atendimentos</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Adicione, edite e visualize todos os seus atendimentos</p>>
       </div>
 
       {/* Formulário de novo atendimento */}
@@ -346,7 +346,7 @@ function Extrato({ atendimentos, setAtendimentos }) {
           <CardDescription>Adicione um novo atendimento ao sistema</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-foreground">
             <div>
               <Label htmlFor="data_atendimento">Data do Atendimento *</Label>
               <Input
@@ -511,29 +511,29 @@ function Extrato({ atendimentos, setAtendimentos }) {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-out</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horas</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nº OS</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plataforma</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prev. Pgto</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor OS</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adicionais</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Despesas</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adiantamento</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Bruto</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Líquido</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                <tr className="border-b bg-accent">
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Data</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Check-in</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Check-out</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Horas</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Nº OS</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Plataforma</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Prev. Pgto</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor OS</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Adicionais</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Despesas</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Adiantamento</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor Bruto</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor Líquido</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Ações</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-border">
                 {atendimentos.length === 0 ? (
                   <tr>
-                    <td colSpan="16" className="px-3 py-8 text-center text-gray-500">
+                    <td colSpan="16" className="px-3 py-8 text-center text-muted-foreground">
                       Nenhum atendimento registrado. Adicione um novo atendimento acima.
                     </td>
                   </tr>

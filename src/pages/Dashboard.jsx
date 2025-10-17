@@ -120,11 +120,11 @@ function Dashboard({ atendimentos }) {
           key={dia}
           className={`h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
             ehHoje
-              ? 'bg-blue-500 text-white'
+              ? 'bg-primary text-primary-foreground'
               : temAtendimento
-              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
+              ? 'bg-green-100/10 text-green-400 hover:bg-green-100/20'
+              : 'text-foreground hover:bg-accent'
+          }`
         >
           {dia}
         </div>
@@ -135,7 +135,7 @@ function Dashboard({ atendimentos }) {
       <div className="space-y-2">
         <div className="grid grid-cols-7 gap-2 mb-2">
           {diasSemana.map(dia => (
-            <div key={dia} className="text-center text-xs font-semibold text-gray-600">
+            <div key={dia} className="text-center text-xs font-semibold text-muted-foreground">
               {dia}
             </div>
           ))}
@@ -145,12 +145,12 @@ function Dashboard({ atendimentos }) {
         </div>
         <div className="flex items-center justify-center gap-4 mt-4 text-xs">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-blue-500 rounded"></div>
-            <span>Hoje</span>
+            <div className="w-4 h-4 bg-primary rounded"></div>
+            <span className="text-muted-foreground">Hoje</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
-            <span>Com atendimento</span>
+            <div className="w-4 h-4 bg-green-100/10 border border-green-400/50 rounded"></div>
+            <span className="text-muted-foreground">Com atendimento</span>
           </div>
         </div>
       </div>
@@ -160,8 +160,8 @@ function Dashboard({ atendimentos }) {
   return (
     <div className="px-4 py-6 space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
-        <p className="mt-1 text-sm text-gray-500">Visão geral dos seus atendimentos e faturamento</p>
+        <h2 className="text-3xl font-bold text-foreground">Dashboard</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Visão geral dos seus atendimentos e faturamento</p>
       </div>
 
       {/* Cards de estatísticas */}

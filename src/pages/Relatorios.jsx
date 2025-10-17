@@ -97,8 +97,8 @@ function Relatorios({ atendimentos }) {
     <div className="px-4 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Relatórios Mensais</h2>
-          <p className="mt-1 text-sm text-gray-500">Análise detalhada dos atendimentos agrupados por mês</p>
+          <h2 className="text-3xl font-bold text-foreground">Relatórios Mensais</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Análise detalhada dos atendimentos agrupados por mês</p>
         </div>
         
         <div className="w-48">
@@ -195,8 +195,8 @@ function Relatorios({ atendimentos }) {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <tr className="border-b bg-accent">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Mês
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -216,24 +216,24 @@ function Relatorios({ atendimentos }) {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-border">
                 {dadosMensais.map((mes, index) => (
                   <tr 
                     key={index} 
                     className={`hover:bg-gray-50 transition-colors ${
-                      mes.quantidadeOS > 0 ? 'bg-white' : 'bg-gray-50 opacity-60'
+                      mes.quantidadeOS > 0 ? 'bg-background' : 'bg-accent opacity-60'
                     }`}
                   >
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900 capitalize">
+                    <td className="px-4 py-3 text-sm font-medium text-foreground capitalize">
                       {mes.mes}
                     </td>
                     <td className="px-4 py-3 text-sm text-right">
                       {mes.quantidadeOS > 0 ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                           {mes.quantidadeOS}
                         </span>
                       ) : (
-                        <span className="text-gray-400">0</span>
+                        <span className="text-muted-foreground">0</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-right font-medium">
