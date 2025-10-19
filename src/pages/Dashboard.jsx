@@ -1,9 +1,11 @@
-import { useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { Calendar, TrendingUp, DollarSign, Clock } from 'lucide-react'
+import { Calendar, TrendingUp, DollarSign, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 
 function Dashboard({ atendimentos }) {
+  const [dataExibicao, setDataExibicao] = useState(new Date())
+
   // Função para calcular horas trabalhadas
   const calcularHoras = (checkin, checkout) => {
     if (!checkin || !checkout) return 0
@@ -38,14 +40,14 @@ function Dashboard({ atendimentos }) {
 
   // Processar dados para gráficos mensais
   const dadosMensais = useMemo(() => {
-    const anoAtual = new Date().getFullYear()
+    const anoExibicao = dataExibicao.getFullYear()
     const meses = {}
     
     // Inicializar todos os meses do ano atual
     for (let i = 1; i <= 12; i++) {
-      const mesKey = `${anoAtual}-${String(i).padStart(2, '0')}`
+      const mesKey = `${anoExibicao}-${String(i).padStart(2, '0')}`
       meses[mesKey] = {
-        mes: new Date(anoAtual, i - 1).toLocaleString('pt-BR', { month: 'short' }),
+        mes: new Date(anoExibicao, i - 1).toLocaleString('pt-BR', { month: 'short' }),
         faturamentoBruto: 0,
         despesas: 0,
         faturamentoLiquido: 0
@@ -69,34 +71,64 @@ function Dashboard({ atendimentos }) {
     })
 
     return Object.values(meses)
-  }, [atendimentos])
+  }, [atendimentos, dataExibicao])
 
   // Calcular estatísticas gerais
   const estatisticas = useMemo(() => {
-    const anoAtual = new Date().getFullYear()
-    const atendimentosAnoAtual = atendimentos.filter(a => 
-      a.data_atendimento && a.data_atendimento.startsWith(String(anoAtual))
-    )
+    const anoExibicao = dataExibicao.getFullYear()
+    const mesExibicao = dataExibicao.getMonth()
 
-    const totalBruto = atendimentosAnoAtual.reduce((acc, a) => acc + calcularValorBruto(a), 0)
-    const totalDespesas = atendimentosAnoAtual.reduce((acc, a) => acc + (parseFloat(a.despesas_os) || 0), 0)
+    const atendimentosMes = atendimentos.filter(a => {
+      if (!a.data_atendimento) return false
+      const dataAtendimento = new Date(a.data_atendimento + 'T03:00:00Z')
+      return dataAtendimento.getFullYear() === anoExibicao && dataAtendimento.getMonth() === mesExibicao
+    })
+
+    const totalBruto = atendimentosMes.reduce((acc, a) => acc + calcularValorBruto(a), 0)
+    const totalDespesas = atendimentosMes.reduce((acc, a) => acc + (parseFloat(a.despesas_os) || 0), 0)
     const totalLiquido = totalBruto - totalDespesas
-    const totalHoras = atendimentosAnoAtual.reduce((acc, a) => acc + calcularHoras(a.checkin, a.checkout), 0)
+    const totalHoras = atendimentosMes.reduce((acc, a) => acc + calcularHoras(a.checkin, a.checkout), 0)
 
     return {
-      totalAtendimentos: atendimentosAnoAtual.length,
+      totalAtendimentos: atendimentosMes.length,
       totalBruto,
       totalDespesas,
       totalLiquido,
       totalHoras
     }
-  }, [atendimentos])
+  }, [atendimentos, dataExibicao])
+
+  // Faturamento por plataforma
+  const faturamentoPorPlataforma = useMemo(() => {
+    const plataformas = {}
+    const atendimentosMes = atendimentos.filter(a => {
+      if (!a.data_atendimento) return false
+      const dataAtendimento = new Date(a.data_atendimento + 'T03:00:00Z')
+      return dataAtendimento.getFullYear() === dataExibicao.getFullYear() && dataAtendimento.getMonth() === dataExibicao.getMonth()
+    })
+
+    atendimentosMes.forEach(atendimento => {
+      if (!plataformas[atendimento.plataforma]) {
+        plataformas[atendimento.plataforma] = 0
+      }
+      plataformas[atendimento.plataforma] += calcularValorBruto(atendimento)
+    })
+
+    return Object.entries(plataformas).map(([plataforma, faturamento]) => ({ plataforma, faturamento }))
+  }, [atendimentos, dataExibicao])
+
+  const mudarMes = (incremento) => {
+    setDataExibicao(prevDate => {
+      const novaData = new Date(prevDate)
+      novaData.setMonth(novaData.getMonth() + incremento)
+      return novaData
+    })
+  }
 
   // Renderizar calendário simples
   const renderCalendario = () => {
-    const hoje = new Date()
-    const mesAtual = hoje.getMonth()
-    const anoAtual = hoje.getFullYear()
+    const mesAtual = dataExibicao.getMonth()
+    const anoAtual = dataExibicao.getFullYear()
     
     const primeiroDia = new Date(anoAtual, mesAtual, 1).getDay()
     const ultimoDia = new Date(anoAtual, mesAtual + 1, 0).getDate()
@@ -113,7 +145,7 @@ function Dashboard({ atendimentos }) {
     for (let dia = 1; dia <= ultimoDia; dia++) {
       const dataStr = `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
       const temAtendimento = diasComAtendimentos.has(dataStr)
-      const ehHoje = dia === hoje.getDate()
+      const ehHoje = dia === new Date().getDate() && mesAtual === new Date().getMonth() && anoAtual === new Date().getFullYear()
       
       dias.push(
         <div
@@ -122,9 +154,9 @@ function Dashboard({ atendimentos }) {
             ehHoje
               ? 'bg-primary text-primary-foreground'
               : temAtendimento
-              ? 'bg-green-100/10 text-green-400 hover:bg-green-100/20'
+              ? 'border-2 border-green-500'
               : 'text-foreground hover:bg-accent'
-          }`
+          }`}
         >
           {dia}
         </div>
@@ -133,6 +165,11 @@ function Dashboard({ atendimentos }) {
     
     return (
       <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <button onClick={() => mudarMes(-1)} className="p-2 rounded-md hover:bg-accent"><ChevronLeft className="w-4 h-4" /></button>
+          <h3 className="text-lg font-semibold">{new Date(anoAtual, mesAtual).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
+          <button onClick={() => mudarMes(1)} className="p-2 rounded-md hover:bg-accent"><ChevronRight className="w-4 h-4" /></button>
+        </div>
         <div className="grid grid-cols-7 gap-2 mb-2">
           {diasSemana.map(dia => (
             <div key={dia} className="text-center text-xs font-semibold text-muted-foreground">
@@ -149,7 +186,7 @@ function Dashboard({ atendimentos }) {
             <span className="text-muted-foreground">Hoje</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-100/10 border border-green-400/50 rounded"></div>
+            <div className="w-4 h-4 border-2 border-green-500 rounded"></div>
             <span className="text-muted-foreground">Com atendimento</span>
           </div>
         </div>
@@ -161,7 +198,7 @@ function Dashboard({ atendimentos }) {
     <div className="px-4 py-6 space-y-6">
       <div>
         <h2 className="text-3xl font-bold text-foreground">Dashboard</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Visão geral dos seus atendimentos e faturamento</p>
+        <p className="mt-1 text-sm text-muted-foreground">Visão geral dos seus atendimentos e faturamento para {new Date(dataExibicao).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</p>
       </div>
 
       {/* Cards de estatísticas */}
@@ -173,7 +210,7 @@ function Dashboard({ atendimentos }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{estatisticas.totalAtendimentos}</div>
-            <p className="text-xs text-muted-foreground">no ano atual</p>
+            <p className="text-xs text-muted-foreground">no mês</p>
           </CardContent>
         </Card>
 
@@ -186,7 +223,7 @@ function Dashboard({ atendimentos }) {
             <div className="text-2xl font-bold">
               {estatisticas.totalBruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </div>
-            <p className="text-xs text-muted-foreground">no ano atual</p>
+            <p className="text-xs text-muted-foreground">no mês</p>
           </CardContent>
         </Card>
 
@@ -199,7 +236,7 @@ function Dashboard({ atendimentos }) {
             <div className="text-2xl font-bold">
               {estatisticas.totalLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </div>
-            <p className="text-xs text-muted-foreground">no ano atual</p>
+            <p className="text-xs text-muted-foreground">no mês</p>
           </CardContent>
         </Card>
 
@@ -210,7 +247,7 @@ function Dashboard({ atendimentos }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{estatisticas.totalHoras.toFixed(1)}h</div>
-            <p className="text-xs text-muted-foreground">no ano atual</p>
+            <p className="text-xs text-muted-foreground">no mês</p>
           </CardContent>
         </Card>
       </div>
@@ -220,20 +257,41 @@ function Dashboard({ atendimentos }) {
         <Card>
           <CardHeader>
             <CardTitle>Calendário de Atendimentos</CardTitle>
-            <CardDescription>
-              {new Date().toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
-            </CardDescription>
           </CardHeader>
           <CardContent>
             {renderCalendario()}
           </CardContent>
         </Card>
 
+        {/* Faturamento por Plataforma */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Faturamento por Plataforma</CardTitle>
+            <CardDescription>Faturamento bruto por plataforma no mês de {new Date(dataExibicao).toLocaleString('pt-BR', { month: 'long' })}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {faturamentoPorPlataforma.length > 0 ? (
+                faturamentoPorPlataforma.map(({ plataforma, faturamento }) => (
+                  <div key={plataforma} className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{plataforma}</span>
+                    <span className="text-sm font-bold">{faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhum faturamento registrado para este mês.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Gráfico de Faturamento Mensal */}
         <Card>
           <CardHeader>
             <CardTitle>Faturamento Mensal</CardTitle>
-            <CardDescription>Comparação de faturamento bruto, despesas e líquido</CardDescription>
+            <CardDescription>Comparação de faturamento bruto, despesas e líquido no ano de {dataExibicao.getFullYear()}</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -252,37 +310,37 @@ function Dashboard({ atendimentos }) {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Gráfico de Evolução do Faturamento Bruto */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Evolução do Faturamento Bruto</CardTitle>
-          <CardDescription>Comparação mês a mês ao longo do ano</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dadosMensais}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="mes" />
-              <YAxis />
-              <Tooltip 
-                formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="faturamentoBruto" 
-                stroke="#3b82f6" 
-                strokeWidth={2}
-                name="Faturamento Bruto"
-                dot={{ fill: '#3b82f6', r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+        {/* Gráfico de Evolução do Faturamento Bruto */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Evolução do Faturamento Bruto</CardTitle>
+            <CardDescription>Comparação mês a mês no ano de {dataExibicao.getFullYear()}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={dadosMensais}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mes" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="faturamentoBruto" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  name="Faturamento Bruto"
+                  dot={{ fill: '#3b82f6', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react';
+import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -40,7 +41,10 @@ const statusOpcoes = [
 
 // Componente de linha da tabela para gerenciar o estado de edição individualmente
 const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editandoId, setEditandoId }) => {
-  const isEditando = editandoId === atendimento.id
+  // Corr  const dataAtendimentoFormatada = atendimento.data_atendimento ? new Date(atendimento.data_atendimento + 'T03:00:00Z').toLocaleDateString('pt-BR') : '';
+  const dataPrevistaPagamentoFormatada = atendimento.data_prevista_pagamento ? new Date(atendimento.data_prevista_pagamento + 'T03:00:00Z').toLocaleDateString('pt-BR') : '';
+  const isEditando = editandoId === atendimento.idg("pt-BR") : "-"}
+      </td>d === atendimento.id
   const [atendimentoEditado, setAtendimentoEditado] = useState(atendimento)
 
   // Efeito para atualizar o estado interno quando o atendimento externo muda (ex: após salvar)
@@ -202,9 +206,7 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
 
   return (
     <tr key={atendimento.id} className="hover:bg-accent transition-colors">
-      <td className="px-3 py-2 text-sm">
-        {new Date(atendimento.data_atendimento).toLocaleDateString('pt-BR')}
-      </td>
+      <td className="px-3 py-2 text-sm">{dataAtendimentoFormatada}</td>
       <td className="px-3 py-2 text-sm">{atendimento.checkin}</td>
       <td className="px-3 py-2 text-sm">{atendimento.checkout}</td>
       <td className="px-3 py-2 text-sm font-medium">
@@ -218,10 +220,8 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
         </span>
       </td>
       <td className="px-3 py-2 text-sm">
-          {atendimento.data_prevista_pagamento ? 
-            new Date(atendimento.data_prevista_pagamento).toLocaleDateString('pt-BR') : '-'}
+          {dataPrevistaPagamentoFormatada}
       </td>
-      <td className="px-3 py-2 text-sm">
         {parseFloat(atendimento.valor_chamado || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
       </td>
       <td className="px-3 py-2 text-sm">
@@ -271,7 +271,16 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
 }
 
 function Extrato({ atendimentos, setAtendimentos }) {
-  const [editandoId, setEditandoId] = useState(null)
+  const [editandoId, setEditandoId] = useState(null);
+  const [filtroMes, setFiltroMes] = useState('');
+  const [filtroPlataforma, setFiltroPlataforma] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('');
+  const [filtroMes, setFiltroMes] = useState('')
+  const [filtroPlataforma, setFiltroPlataforma] = useState('')
+  const [filtroStatus, setFiltroStatus] = useState('')
+  const [filtroMes, setFiltroMes] = useState('')
+  const [filtroPlataforma, setFiltroPlataforma] = useState('')
+  const [filtroStatus, setFiltroStatus] = useState('')
   const [novoAtendimento, setNovoAtendimento] = useState({
     data_atendimento: '',
     checkin: '',
@@ -301,6 +310,7 @@ function Extrato({ atendimentos, setAtendimentos }) {
 
     setAtendimentos([...atendimentos, atendimento])
     setNovoAtendimento({
+      id: null,
       data_atendimento: '',
       checkin: '',
       checkout: '',
@@ -312,9 +322,103 @@ function Extrato({ atendimentos, setAtendimentos }) {
       ganhos_adicionais: '',
       despesas_os: '',
       adiantamento_recebido: '',
-      status: 'Prox Atendimento'
-    })
+      status: 'Prox Atendimento',
+    });
   }
+
+  const meses = [
+    { value: '', label: 'Todos os Meses' },
+    { value: '01', label: 'Janeiro' },
+    { value: '02', label: 'Fevereiro' },
+    { value: '03', label: 'Março' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Maio' },
+    { value: '06', label: 'Junho' },
+    { value: '07', label: 'Julho' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' },
+  ];
+
+  const plataformasComTodos = [{ value: '', label: 'Todas as Plataformas' }, ...plataformas.map(p => ({ value: p, label: p }))];
+  const statusComTodos = [{ value: '', label: 'Todos os Status' }, ...statusOpcoes.map(s => ({ value: s, label: s }))];
+
+  const atendimentosFiltrados = useMemo(() => {
+    return atendimentos.filter(atendimento => {
+      const dataAtendimento = new Date(atendimento.data_atendimento + 'T03:00:00Z'); // Usar UTC para evitar problemas de fuso horário
+      const mesAtendimento = (dataAtendimento.getMonth() + 1).toString().padStart(2, '0');
+
+      const mesCorresponde = filtroMes === '' || mesAtendimento === filtroMes;
+      const plataformaCorresponde = filtroPlataforma === '' || atendimento.plataforma === filtroPlataforma;
+      const statusCorresponde = filtroStatus === '' || atendimento.status === filtroStatus;
+
+      return mesCorresponde && plataformaCorresponde && statusCorresponde;
+    });
+  }, [atendimentos, filtroMes, filtroPlataforma, filtroStatus]);
+
+  const meses = [
+    { value: '', label: 'Todos os Meses' },
+    { value: '01', label: 'Janeiro' },
+    { value: '02', label: 'Fevereiro' },
+    { value: '03', label: 'Março' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Maio' },
+    { value: '06', label: 'Junho' },
+    { value: '07', label: 'Julho' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' },
+  ]
+
+  const plataformasComTodos = [{ value: '', label: 'Todas as Plataformas' }, ...plataformas.map(p => ({ value: p, label: p }))]
+  const statusComTodos = [{ value: '', label: 'Todos os Status' }, ...statusOpcoes.map(s => ({ value: s, label: s }))]
+
+  const atendimentosFiltrados = useMemo(() => {
+    return atendimentos.filter(atendimento => {
+      const dataAtendimento = new Date(atendimento.data_atendimento + 'T00:00:00')
+      const mesAtendimento = (dataAtendimento.getMonth() + 1).toString().padStart(2, '0')
+
+      const mesCorresponde = filtroMes === '' || mesAtendimento === filtroMes
+      const plataformaCorresponde = filtroPlataforma === '' || atendimento.plataforma === filtroPlataforma
+      const statusCorresponde = filtroStatus === '' || atendimento.status === filtroStatus
+
+      return mesCorresponde && plataformaCorresponde && statusCorresponde
+    })
+  }, [atendimentos, filtroMes, filtroPlataforma, filtroStatus]) [
+    { value: '', label: 'Todos os Meses' },
+    { value: '01', label: 'Janeiro' },
+    { value: '02', label: 'Fevereiro' },
+    { value: '03', label: 'Março' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Maio' },
+    { value: '06', label: 'Junho' },
+    { value: '07', label: 'Julho' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' },
+  ]
+
+  const plataformasComTodos = [{ value: '', label: 'Todas as Plataformas' }, ...plataformas.map(p => ({ value: p, label: p }))]
+  const statusComTodos = [{ value: '', label: 'Todos os Status' }, ...statusOpcoes.map(s => ({ value: s, label: s }))]
+
+  const atendimentosFiltrados = useMemo(() => {
+    return atendimentos.filter(atendimento => {
+      const dataAtendimento = new Date(atendimento.data_atendimento + 'T00:00:00')
+      const mesAtendimento = (dataAtendimento.getMonth() + 1).toString().padStart(2, '0')
+
+      const mesCorresponde = filtroMes === '' || mesAtendimento === filtroMes
+      const plataformaCorresponde = filtroPlataforma === '' || atendimento.plataforma === filtroPlataforma
+      const statusCorresponde = filtroStatus === '' || atendimento.status === filtroStatus
+
+      return mesCorresponde && plataformaCorresponde && statusCorresponde
+    })
+  }, [atendimentos, filtroMes, filtroPlataforma, filtroStatus])
 
   // Salvar edição
   const handleSalvarEdicao = (id, atendimentoEditado) => {
@@ -500,11 +604,167 @@ function Extrato({ atendimentos, setAtendimentos }) {
       </Card>
 
       {/* Tabela de atendimentos */}
+      {/* Filtros */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Filtrar Atendimentos</CardTitle>
+          <CardDescription>Use os filtros abaixo para refinar a lista de atendimentos.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="filtroMes">Mês</Label>
+              <Select value={filtroMes} onValueChange={setFiltroMes}>
+                <SelectTrigger id="filtroMes" className="w-full">
+                  <SelectValue placeholder="Todos os Meses" />
+                </SelectTrigger>
+                <SelectContent>
+                  {meses.map(mes => (
+                    <SelectItem key={mes.value} value={mes.value}>{mes.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="filtroPlataforma">Plataforma</Label>
+              <Select value={filtroPlataforma} onValueChange={setFiltroPlataforma}>
+                <SelectTrigger id="filtroPlataforma" className="w-full">
+                  <SelectValue placeholder="Todas as Plataformas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {plataformasComTodos.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="filtroStatus">Status</Label>
+              <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+                <SelectTrigger id="filtroStatus" className="w-full">
+                  <SelectValue placeholder="Todos os Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusComTodos.map(s => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabela de atendimentos */}
+      {/* Filtros */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Filtrar Atendimentos</CardTitle>
+          <CardDescription>Use os filtros abaixo para refinar a lista de atendimentos.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="filtroMes">Mês</Label>
+              <Select value={filtroMes} onValueChange={setFiltroMes}>
+                <SelectTrigger id="filtroMes" className="w-full">
+                  <SelectValue placeholder="Todos os Meses" />
+                </SelectTrigger>
+                <SelectContent>
+                  {meses.map(mes => (
+                    <SelectItem key={mes.value} value={mes.value}>{mes.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="filtroPlataforma">Plataforma</Label>
+              <Select value={filtroPlataforma} onValueChange={setFiltroPlataforma}>
+                <SelectTrigger id="filtroPlataforma" className="w-full">
+                  <SelectValue placeholder="Todas as Plataformas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {plataformasComTodos.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="filtroStatus">Status</Label>
+              <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+                <SelectTrigger id="filtroStatus" className="w-full">
+                  <SelectValue placeholder="Todos os Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusComTodos.map(s => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabela de atendimentos */}
+      {/* Filtros */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Filtrar Atendimentos</CardTitle>
+          <CardDescription>Use os filtros abaixo para refinar a lista de atendimentos.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="filtroMes">Mês</Label>
+              <Select value={filtroMes} onValueChange={setFiltroMes}>
+                <SelectTrigger id="filtroMes" className="w-full">
+                  <SelectValue placeholder="Todos os Meses" />
+                </SelectTrigger>
+                <SelectContent>
+                  {meses.map(mes => (
+                    <SelectItem key={mes.value} value={mes.value}>{mes.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="filtroPlataforma">Plataforma</Label>
+              <Select value={filtroPlataforma} onValueChange={setFiltroPlataforma}>
+                <SelectTrigger id="filtroPlataforma" className="w-full">
+                  <SelectValue placeholder="Todas as Plataformas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {plataformasComTodos.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="filtroStatus">Status</Label>
+              <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+                <SelectTrigger id="filtroStatus" className="w-full">
+                  <SelectValue placeholder="Todos os Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusComTodos.map(s => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabela de atendimentos */}
       <Card>
         <CardHeader>
           <CardTitle>Lista de Atendimentos</CardTitle>
           <CardDescription>
-            {atendimentos.length} {atendimentos.length === 1 ? 'atendimento registrado' : 'atendimentos registrados'}
+            {atendimentosFiltrados.length} {atendimentosFiltrados.length === 1 ? 'atendimento registrado' : 'atendimentos registrados'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -531,15 +791,15 @@ function Extrato({ atendimentos, setAtendimentos }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {atendimentos.length === 0 ? (
+                {atendimentosFiltrados.length === 0 ? (
                   <tr>
                     <td colSpan="16" className="px-3 py-8 text-center text-muted-foreground">
                       Nenhum atendimento registrado. Adicione um novo atendimento acima.
                     </td>
                   </tr>
                 ) : (
-                  atendimentos
-                    .sort((a, b) => new Date(b.data_atendimento) - new Date(a.data_atendimento))
+                  atendimentosFiltrados
+                      .sort((a, b) => new Date(b.data_atendimento + 'T03:00:00Z') - new Date(a.data_atendimento + 'T03:00:00Z'))
                     .map(atendimento => (
                       <AtendimentoRow
                         key={atendimento.id}
