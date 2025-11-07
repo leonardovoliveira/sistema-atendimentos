@@ -41,10 +41,9 @@ const statusOpcoes = [
 
 // Componente de linha da tabela para gerenciar o estado de edição individualmente
 const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editandoId, setEditandoId }) => {
-  // Corr  const dataAtendimentoFormatada = atendimento.data_atendimento ? new Date(atendimento.data_atendimento + 'T03:00:00Z').toLocaleDateString('pt-BR') : '';
-  const dataPrevistaPagamentoFormatada = atendimento.data_prevista_pagamento ? new Date(atendimento.data_prevista_pagamento + 'T03:00:00Z').toLocaleDateString('pt-BR') : '';
-  const isEditando = editandoId === atendimento.idg("pt-BR") : "-"}
-      </td>d === atendimento.id
+  const dataAtendimentoFormatada = atendimento.data_atendimento ? new Date(atendimento.data_atendimento + 'T03:00:00Z').toLocaleDateString('pt-BR') : '';
+  const dataPrevistaPagamentoFormatada = atendimento.data_prevista_pagamento ? new Date(atendimento.data_prevista_pagamento + 'T03:00:00Z').toLocaleDateString('pt-BR') : '-';
+  const isEditando = editandoId === atendimento.id
   const [atendimentoEditado, setAtendimentoEditado] = useState(atendimento)
 
   // Efeito para atualizar o estado interno quando o atendimento externo muda (ex: após salvar)
