@@ -361,7 +361,7 @@ function Extrato({ atendimentos, setAtendimentos }) {
 
       return mesCorresponde && plataformaCorresponde && statusCorresponde
     })
-  }, [atendimentos, filtroMes, filtroPlataforma, filtroStatus]) [
+  } [atendimentos, filtroMes, filtroPlataforma, filtroStatus]) [
     { value: '', label: 'Todos os Meses' },
     { value: '01', label: 'Janeiro' },
     { value: '02', label: 'Fevereiro' },
