@@ -275,12 +275,6 @@ function Extrato({ atendimentos, setAtendimentos }) {
   const [filtroMes, setFiltroMes] = useState('');
   const [filtroPlataforma, setFiltroPlataforma] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
-  const [filtroMes, setFiltroMes] = useState('')
-  const [filtroPlataforma, setFiltroPlataforma] = useState('')
-  const [filtroStatus, setFiltroStatus] = useState('')
-  const [filtroMes, setFiltroMes] = useState('')
-  const [filtroPlataforma, setFiltroPlataforma] = useState('')
-  const [filtroStatus, setFiltroStatus] = useState('')
   const [novoAtendimento, setNovoAtendimento] = useState({
     data_atendimento: '',
     checkin: '',
@@ -357,27 +351,6 @@ function Extrato({ atendimentos, setAtendimentos }) {
       return mesCorresponde && plataformaCorresponde && statusCorresponde;
     });
   }, [atendimentos, filtroMes, filtroPlataforma, filtroStatus]);
-
-  const meses = [
-    { value: '', label: 'Todos os Meses' },
-    { value: '01', label: 'Janeiro' },
-    { value: '02', label: 'Fevereiro' },
-    { value: '03', label: 'Março' },
-    { value: '04', label: 'Abril' },
-    { value: '05', label: 'Maio' },
-    { value: '06', label: 'Junho' },
-    { value: '07', label: 'Julho' },
-    { value: '08', label: 'Agosto' },
-    { value: '09', label: 'Setembro' },
-    { value: '10', label: 'Outubro' },
-    { value: '11', label: 'Novembro' },
-    { value: '12', label: 'Dezembro' },
-  ]
-
-  const plataformasComTodos = [{ value: '', label: 'Todas as Plataformas' }, ...plataformas.map(p => ({ value: p, label: p }))]
-  const statusComTodos = [{ value: '', label: 'Todos os Status' }, ...statusOpcoes.map(s => ({ value: s, label: s }))]
-
-  const atendimentosFiltrados = useMemo(() => {
     return atendimentos.filter(atendimento => {
       const dataAtendimento = new Date(atendimento.data_atendimento + 'T00:00:00')
       const mesAtendimento = (dataAtendimento.getMonth() + 1).toString().padStart(2, '0')
