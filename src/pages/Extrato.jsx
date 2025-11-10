@@ -1,32 +1,13 @@
-import { useMemo, useState } from 'react'
-import { PlusCircle } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectItem, SelectTrigger, SelectValue, SelectContent } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useAtendimentos } from '@/hooks/useAtendimentos'
 
-export default function AtendimentosPage() {
-  const { atendimentos, adicionarAtendimento, editarAtendimento } = useAtendimentos()
-
+const Extrato = ({ atendimentos }) => {
   const [filtroMes, setFiltroMes] = useState('')
   const [filtroPlataforma, setFiltroPlataforma] = useState('')
   const [filtroStatus, setFiltroStatus] = useState('')
-
-  // Filtragem dos atendimentos
-  const atendimentosFiltrados = useMemo(() => {
-    return atendimentos.filter((atendimento) => {
-      const dataAtendimento = new Date(atendimento.data_atendimento + 'T00:00:00')
-      const mesAtendimento = (dataAtendimento.getMonth() + 1).toString().padStart(2, '0')
-
-      const mesCorresponde = filtroMes === '' || mesAtendimento === filtroMes
-      const plataformaCorresponde =
-        filtroPlataforma === '' || atendimento.plataforma === filtroPlataforma
-      const statusCorresponde = filtroStatus === '' || atendimento.status === filtroStatus
-
-      return mesCorresponde && plataformaCorresponde && statusCorresponde
-    })
-  }, [atendimentos, filtroMes, filtroPlataforma, filtroStatus])
 
   const meses = [
     { valor: '01', nome: 'Janeiro' },
@@ -43,38 +24,31 @@ export default function AtendimentosPage() {
     { valor: '12', nome: 'Dezembro' },
   ]
 
-  const plataformas = ['WhatsApp', 'Instagram', 'Facebook', 'Telefone']
-  const statusList = ['Aberto', 'Em andamento', 'Concluído', 'Cancelado']
+  const atendimentosFiltrados = useMemo(() => {
+    return atendimentos.filter((atendimento) => {
+      const dataAtendimento = new Date(atendimento.data_atendimento + 'T00:00:00')
+      const mesAtendimento = (dataAtendimento.getMonth() + 1).toString().padStart(2, '0')
+
+      const mesCorresponde = filtroMes === '' || mesAtendimento === filtroMes
+      const plataformaCorresponde =
+        filtroPlataforma === '' || atendimento.plataforma === filtroPlataforma
+      const statusCorresponde = filtroStatus === '' || atendimento.status === filtroStatus
+
+      return mesCorresponde && plataformaCorresponde && statusCorresponde
+    })
+  }, [atendimentos, filtroMes, filtroPlataforma, filtroStatus])
 
   return (
-    <div className="space-y-6">
-      {/* Cabeçalho */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Atendimentos</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Adicione, edite e visualize todos os seus atendimentos
-          </p>
-        </div>
-        <Button className="flex items-center gap-2" onClick={adicionarAtendimento}>
-          <PlusCircle className="h-4 w-4" />
-          Novo Atendimento
-        </Button>
-      </div>
-
-      {/* Filtros */}
+    <div className="p-6 space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Filtrar Atendimentos</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {/* Mês */}
-          <Select value={filtroMes} onValueChange={setFiltroMes}>
+        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Filtro de Mês */}
+          <Select value={filtroMes} onValueChange={(value) => setFiltroMes(value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Mês" />
+              <SelectValue placeholder="Filtrar por mês" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="">Todos os Meses</SelectItem>
               {meses.map((mes) => (
                 <SelectItem key={mes.valor} value={mes.valor}>
                   {mes.nome}
@@ -83,87 +57,69 @@ export default function AtendimentosPage() {
             </SelectContent>
           </Select>
 
-          {/* Plataforma */}
-          <Select value={filtroPlataforma} onValueChange={setFiltroPlataforma}>
+          {/* Filtro de Plataforma */}
+          <Input
+            type="text"
+            placeholder="Filtrar por plataforma"
+            value={filtroPlataforma}
+            onChange={(e) => setFiltroPlataforma(e.target.value)}
+          />
+
+          {/* Filtro de Status */}
+          <Select value={filtroStatus} onValueChange={(value) => setFiltroStatus(value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Plataforma" />
+              <SelectValue placeholder="Filtrar por status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas</SelectItem>
-              {plataformas.map((plataforma) => (
-                <SelectItem key={plataforma} value={plataforma}>
-                  {plataforma}
-                </SelectItem>
-              ))}
+              <SelectItem value="">Todos os Status</SelectItem>
+              <SelectItem value="Pendente">Pendente</SelectItem>
+              <SelectItem value="Concluído">Concluído</SelectItem>
+              <SelectItem value="Cancelado">Cancelado</SelectItem>
             </SelectContent>
           </Select>
-
-          {/* Status */}
-          <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-            <SelectTrigger>
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
-              {statusList.map((status) => (
-                <SelectItem key={status} value={status}>
-                  {status}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Busca (opcional) */}
-          <Input placeholder="Buscar por cliente..." />
         </CardContent>
       </Card>
 
-      {/* Lista de atendimentos */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Atendimentos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {atendimentosFiltrados.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Nenhum atendimento encontrado.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse">
-                <thead>
-                  <tr className="border-b text-sm text-muted-foreground">
-                    <th className="text-left py-2 px-3 font-medium">Data</th>
-                    <th className="text-left py-2 px-3 font-medium">Cliente</th>
-                    <th className="text-left py-2 px-3 font-medium">Plataforma</th>
-                    <th className="text-left py-2 px-3 font-medium">Status</th>
-                    <th className="text-right py-2 px-3 font-medium">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {atendimentosFiltrados.map((at) => (
-                    <tr key={at.id} className="border-b last:border-none">
-                      <td className="py-2 px-3 text-sm">
-                        {new Date(at.data_atendimento).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td className="py-2 px-3 text-sm">{at.cliente}</td>
-                      <td className="py-2 px-3 text-sm">{at.plataforma}</td>
-                      <td className="py-2 px-3 text-sm">{at.status}</td>
-                      <td className="py-2 px-3 text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => editarAtendimento(at.id)}
-                        >
-                          Editar
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Lista de Atendimentos */}
+      <div className="grid gap-4">
+        {atendimentosFiltrados.length === 0 ? (
+          <p className="text-center text-gray-500">Nenhum atendimento encontrado.</p>
+        ) : (
+          atendimentosFiltrados.map((atendimento, index) => (
+            <Card key={index} className="border border-gray-200">
+              <CardContent className="p-4 flex justify-between items-center">
+                <div>
+                  <p className="font-semibold">{atendimento.nome}</p>
+                  <p className="text-sm text-gray-500">
+                    {new Date(atendimento.data_atendimento).toLocaleDateString('pt-BR')}
+                  </p>
+                  <p className="text-sm">{atendimento.plataforma}</p>
+                </div>
+                <div className="text-right">
+                  <p
+                    className={`text-sm font-medium ${
+                      atendimento.status === 'Concluído'
+                        ? 'text-green-600'
+                        : atendimento.status === 'Cancelado'
+                        ? 'text-red-600'
+                        : 'text-yellow-600'
+                    }`}
+                  >
+                    {atendimento.status}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Botão de Exportar */}
+      <div className="flex justify-end">
+        <Button onClick={() => console.log('Exportar CSV')}>Exportar CSV</Button>
+      </div>
     </div>
   )
 }
+
+export default Extrato
