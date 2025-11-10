@@ -221,6 +221,7 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
       <td className="px-3 py-2 text-sm">
           {dataPrevistaPagamentoFormatada}
       </td>
+      <td className="px-3 py-2 text-sm">
         {parseFloat(atendimento.valor_chamado || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
       </td>
       <td className="px-3 py-2 text-sm">
