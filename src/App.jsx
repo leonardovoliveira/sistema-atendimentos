@@ -104,7 +104,7 @@ function App() {
   }, [])
 
   // Salvar dados no localStorage sempre que houver alteração
-  useEffect(() => {    console.log("Salvando no localStorage:", atendimentos);
+  useEffect(() => {
     localStorage.setItem("atendimentos", JSON.stringify(atendimentos));
   }, [atendimentos])
 
