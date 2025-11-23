@@ -341,10 +341,10 @@ function Extrato({ atendimentos, setAtendimentos }) {
 
   const atendimentosFiltrados = useMemo(() => {
     return atendimentos.filter(atendimento => {
-      const dataAtendimento = new Date(atendimento.data_atendimento + 'T03:00:00Z'); // Usar UTC para evitar problemas de fuso horário
-      const mesAtendimento = (dataAtendimento.getMonth() + 1).toString().padStart(2, '0');
+      const dataAtendimento = atendimento.data_atendimento ? new Date(atendimento.data_atendimento + 'T03:00:00Z') : null; // Usar UTC para evitar problemas de fuso horário
+      const mesAtendimento = dataAtendimento ? (dataAtendimento.getMonth() + 1).toString().padStart(2, '0') : '';
 
-      const mesCorresponde = filtroMes === '' || mesAtendimento === filtroMes;
+      const mesCorresponde = filtroMes === '' || (dataAtendimento && mesAtendimento === filtroMes);
       const plataformaCorresponde = filtroPlataforma === '' || atendimento.plataforma === filtroPlataforma;
       const statusCorresponde = filtroStatus === '' || atendimento.status === filtroStatus;
 
