@@ -283,10 +283,10 @@ function Extrato({ atendimentos, setAtendimentos }) {
     nome_cliente: '',
     plataforma: '',
     data_prevista_pagamento: '',
-    valor_chamado: '',
-    ganhos_adicionais: '',
-    despesas_os: '',
-    adiantamento_recebido: '',
+    valor_chamado: '0',
+    ganhos_adicionais: '0',
+    despesas_os: '0',
+    adiantamento_recebido: '0',
     status: 'Prox Atendimento'
   })
 
@@ -312,10 +312,10 @@ function Extrato({ atendimentos, setAtendimentos }) {
       nome_cliente: '',
       plataforma: '',
       data_prevista_pagamento: '',
-      valor_chamado: '',
-      ganhos_adicionais: '',
-      despesas_os: '',
-      adiantamento_recebido: '',
+      valor_chamado: '0',
+      ganhos_adicionais: '0',
+      despesas_os: '0',
+      adiantamento_recebido: '0',
       status: 'Prox Atendimento',
     });
   }
