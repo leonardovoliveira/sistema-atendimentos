@@ -4,6 +4,7 @@ import { Home, FileText, BarChart3 } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Extrato from './pages/Extrato'
 import Relatorios from './pages/Relatorios'
+import ErrorBoundary from './components/ErrorBoundary'
 import './App.css'
 
 function Navigation({ toggleDarkMode, darkMode }) {
@@ -115,7 +116,11 @@ function App() {
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <Routes>
             <Route path="/" element={<Dashboard atendimentos={atendimentos} />} />
-            <Route path="/extrato" element={<Extrato atendimentos={atendimentos} setAtendimentos={setAtendimentos} />} />
+            <Route path="/extrato" element={
+              <ErrorBoundary>
+                <Extrato atendimentos={atendimentos} setAtendimentos={setAtendimentos} />
+              </ErrorBoundary>
+            } />
             <Route path="/relatorios" element={<Relatorios atendimentos={atendimentos} />} />
           </Routes>
         </main>
