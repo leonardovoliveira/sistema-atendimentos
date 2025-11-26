@@ -271,9 +271,9 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
 
 function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
   const [editandoId, setEditandoId] = useState(null);
-  const [filtroMes, setFiltroMes] = useState('all'); // Inicializa com 'all'
-  const [filtroPlataforma, setFiltroPlataforma] = useState('all'); // Inicializa com 'all'
-  const [filtroStatus, setFiltroStatus] = useState('all'); // Inicializa com 'all'
+  const [filtroMes, setFiltroMes] = useState('all');
+  const [filtroPlataforma, setFiltroPlataforma] = useState('all');
+  const [filtroStatus, setFiltroStatus] = useState('all');
   const [novoAtendimento, setNovoAtendimento] = useState({
     data_atendimento: '',
     checkin: '',
@@ -318,8 +318,8 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
     });
   }
 
-  cconst meses = [
-    { value: 'all', label: 'Todos os Meses' },}, // Corrigido para 'all'
+  const meses = [
+    { value: 'all', label: 'Todos os Meses' },
     { value: '01', label: 'Janeiro' },
     { value: '02', label: 'Fevereiro' },
     { value: '03', label: 'Março' },
@@ -334,17 +334,17 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
     { value: '12', label: 'Dezembro' },
   ];
 
-  cconst plataformasComTodos = [{ value: 'all', label: 'Todas as Plataformas' }, ...plataformas.map(p => ({ value: p, label: p }))];]; // Corrigido para 'all'
-  coconst statusComTodos = [{ value: 'all', label: 'Todos os Status' }, ...statusOpcoes.map(s => ({ value: s, label: s }))];; // Corrigido para 'all'
+  const plataformasComTodos = [{ value: 'all', label: 'Todas as Plataformas' }, ...plataformas.map(p => ({ value: p, label: p }))];
+  const statusComTodos = [{ value: 'all', label: 'Todos os Status' }, ...statusOpcoes.map(s => ({ value: s, label: s }))];
 
   const atendimentosFiltrados = useMemo(() => {
     return atendimentos.filter(atendimento => {
       const dataAtendimento = atendimento.data_atendimento ? new Date(atendimento.data_atendimento + 'T03:00:00Z') : null; // Usar UTC para evitar problemas de fuso horário
       const mesAtendimento = dataAtendimento ? (dataAtendimento.getMonth() + 1).toString().padStart(2, '0') : '';
 
-      cconst mesCorresponde = filtroMes === 'all' || (dataAtendimento && mesAtendimento === filtroMes);); // Ajustado para 'all'
-      coconst plataformaCorresponde = filtroPlataforma === 'all' || atendimento.plataforma === filtroPlataforma;; // Ajustado para 'all'
-      const statusCorresponde = filtroStatus === 'all' || atendimento.status === filtroStatus;us; // Ajustado para 'all'
+      const mesCorresponde = filtroMes === 'all' || (dataAtendimento && mesAtendimento === filtroMes);
+      const plataformaCorresponde = filtroPlataforma === 'all' || atendimento.plataforma === filtroPlataforma;
+      const statusCorresponde = filtroStatus === 'all' || atendimento.status === filtroStatus;
 
       return mesCorresponde && plataformaCorresponde && statusCorresponde;
     });
