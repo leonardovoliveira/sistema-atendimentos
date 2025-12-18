@@ -20,7 +20,7 @@ function Navigation({ toggleDarkMode, darkMode }) {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-bold text-foreground">Sistema de Atendimentos</h1>
+              <h1 className="text-xl font-bold text-foreground">LVO TI</h1>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <button
@@ -63,6 +63,16 @@ function Navigation({ toggleDarkMode, darkMode }) {
                 Relatórios Mensais
               </Link>
             </div>
+          </div>
+          <div className="flex items-center">
+            <a
+              href="https://www.nfse.gov.br/EmissorNacional/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Emitir NF
+            </a>
           </div>
         </div>
       </div>
