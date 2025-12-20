@@ -338,8 +338,8 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
   const statusComTodos = [{ value: 'all', label: 'Todos os Status' }, ...statusOpcoes.map(s => ({ value: s, label: s }))];
 
   const atendimentosFiltrados = useMemo(() => {
-    return atendimentos.filter(atendimento => {
-      const dataAtendimento = atendimento.data_atendimento ? new Date(atendimento.data_atendimento + 'T03:00:00Z') : null; // Usar UTC para evitar problemas de fuso horário
+    const atendimentosFiltrados = atendimentos.filter(atendimento => {
+      const dataAtendimento = atendimento.data_atendimento ? new Date(atendimento.data_atendimento + 'T03:00:00Z') : null;
       const mesAtendimento = dataAtendimento ? (dataAtendimento.getMonth() + 1).toString().padStart(2, '0') : '';
 
       const mesCorresponde = filtroMes === 'all' || (dataAtendimento && mesAtendimento === filtroMes);
@@ -347,6 +347,25 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
       const statusCorresponde = filtroStatus === 'all' || atendimento.status === filtroStatus;
 
       return mesCorresponde && plataformaCorresponde && statusCorresponde;
+    });
+
+    // Ordenar por data (crescente) e check-in (crescente)
+    return [...atendimentosFiltrados].sort((a, b) => {
+      // 1. Comparar a data
+      const dataA = new Date(a.data_atendimento);
+      const dataB = new Date(b.data_atendimento);
+
+      if (dataA.getTime() !== dataB.getTime()) {
+        return dataA.getTime() - dataB.getTime(); // Crescente por data
+      }
+
+      // 2. Se as datas forem iguais, comparar o check-in (formato HH:MM)
+      const checkinA = a.checkin;
+      const checkinB = b.checkin;
+
+      if (checkinA < checkinB) return -1;
+      if (checkinA > checkinB) return 1;
+      return 0;
     });
   }, [atendimentos, filtroMes, filtroPlataforma, filtroStatus]);
 
