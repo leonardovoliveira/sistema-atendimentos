@@ -28,6 +28,28 @@ const calcularValorLiquido = (atendimento) => {
 }
 
 const plataformas = ['FINDUP', 'EUNERD', 'QUALLITY', 'NS SUPORTE', 'ONIX SUPORTE', 'CO&BE', 'LVO TI']
+// Função para mapear plataforma para classes de cor Tailwind
+const getPlataformaColorClass = (plataforma) => {
+  switch (plataforma) {
+    case 'FINDUP':
+      return 'bg-blue-100 text-blue-800';
+    case 'EUNERD':
+      return 'bg-green-100 text-green-800';
+    case 'QUALLITY':
+      return 'bg-purple-100 text-purple-800';
+    case 'NS SUPORTE':
+      return 'bg-red-100 text-red-800';
+    case 'ONIX SUPORTE':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'CO&BE':
+      return 'bg-indigo-100 text-indigo-800';
+    case 'LVO TI':
+      return 'bg-pink-100 text-pink-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
 const statusOpcoes = [
   'Prox Atendimento',
   'em atendimento',
@@ -213,7 +235,7 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
       <td className="px-3 py-2 text-sm">{atendimento.numero_os}</td>
       <td className="px-3 py-2 text-sm">{atendimento.nome_cliente}</td>
       <td className="px-3 py-2 text-sm">
-        <span className="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
+        <span className={`px-2 py-1 rounded text-xs font-medium ${getPlataformaColorClass(atendimento.plataforma)}`}>
           {atendimento.plataforma}
         </span>
       </td>
