@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Calendar, TrendingUp, DollarSign, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -203,16 +204,18 @@ function Dashboard({ atendimentos }) {
 
       {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Atendimentos</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{estatisticas.totalAtendimentos}</div>
-            <p className="text-xs text-muted-foreground">no mês</p>
-          </CardContent>
-        </Card>
+	        <Link to="/extrato" className="block hover:shadow-lg transition-shadow rounded-lg">
+	          <Card>
+	            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+	              <CardTitle className="text-sm font-medium">Total de Atendimentos</CardTitle>
+	              <Calendar className="h-4 w-4 text-muted-foreground" />
+	            </CardHeader>
+	            <CardContent>
+	              <div className="text-2xl font-bold">{estatisticas.totalAtendimentos}</div>
+	              <p className="text-xs text-muted-foreground">no mês</p>
+	            </CardContent>
+	          </Card>
+	        </Link>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
