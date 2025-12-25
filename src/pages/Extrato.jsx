@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Edit2, Trash2, Save, X } from 'lucide-react'
+import { Plus, Edit2, Trash2, Save, X, Download, Upload } from 'lucide-react'
 
 // Função para calcular horas trabalhadas
 const calcularHoras = (checkin, checkout) => {
@@ -296,7 +296,48 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
   const [filtroMes, setFiltroMes] = useState('all');
   const [filtroPlataforma, setFiltroPlataforma] = useState('all');
   const [filtroStatus, setFiltroStatus] = useState('all');
-  const [novoAtendimento, setNovoAtendimento] = useState({
+  const [atendimentos, setAtendimentos] = useState([])
+  const fileInputRef = useRef(null)
+
+  // Lógica de Exportação
+  const handleExportar = () => {
+    const dataStr = JSON.stringify(atendimentos, null, 2)
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr)
+
+    const exportFileDefaultName = 'extrato_atendimentos.json'
+
+    const linkElement = document.createElement('a')
+    linkElement.setAttribute('href', dataUri)
+    linkElement.setAttribute('download', exportFileDefaultName)
+    linkElement.click()
+  }
+
+  // Lógica de Importação
+  const handleImportar = (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result)
+        if (Array.isArray(importedData)) {
+          setAtendimentos(importedData)
+          alert('Dados importados com sucesso!')
+        } else {
+          alert('Formato de arquivo inválido. Esperado um array de atendimentos.')
+        }
+      } catch (error) {
+        alert('Erro ao ler o arquivo: ' + error.message)
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  // Função para acionar o input de arquivo
+  const handleImportClick = () => {
+    fileInputRef.current.click()
+  }({
     data_atendimento: '',
     checkin: '',
     checkout: '',
@@ -397,10 +438,29 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Extrato de Atendimentos</h1>
       <Card>
-        <CardHeader>
-          <CardTitle>Filtros e Resumo</CardTitle>
-          <CardDescription>Filtre os atendimentos e veja o resumo financeiro.</CardDescription>
-        </CardHeader>
+	        <CardHeader className="flex flex-row items-center justify-between">
+	          <div>
+	            <CardTitle className="text-xl font-bold">Filtros e Resumo</CardTitle>
+	            <CardDescription>Filtre os atendimentos e veja o resumo financeiro.</CardDescription>
+	          </div>
+	          <div className="flex space-x-2">
+	            <Button onClick={handleExportar} variant="outline" size="sm">
+	              <Download className="w-4 h-4 mr-2" />
+	              Exportar
+	            </Button>
+	            <input
+	              type="file"
+	              ref={fileInputRef}
+	              onChange={handleImportar}
+	              accept=".json"
+	              style={{ display: 'none' }}
+	            />
+	            <Button onClick={handleImportClick} variant="outline" size="sm">
+	              <Upload className="w-4 h-4 mr-2" />
+	              Importar
+	            </Button>
+	          </div>
+	        </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
             <Label>Filtrar por Mês</Label>
