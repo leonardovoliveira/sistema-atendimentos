@@ -436,30 +436,33 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Extrato de Atendimentos</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Extrato de Atendimentos</h1>
+        <div className="flex space-x-2">
+          <Button onClick={handleExportar} variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-2" />
+            Exportar
+          </Button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImportar}
+            accept=".json"
+            style={{ display: 'none' }}
+          />
+          <Button onClick={handleImportClick} variant="outline" size="sm">
+            <Upload className="w-4 h-4 mr-2" />
+            Importar
+          </Button>
+        </div>
+      </div>
       <Card>
 	        <CardHeader className="flex flex-row items-center justify-between">
 	          <div>
 	            <CardTitle className="text-xl font-bold">Filtros e Resumo</CardTitle>
 	            <CardDescription>Filtre os atendimentos e veja o resumo financeiro.</CardDescription>
 	          </div>
-	          <div className="flex space-x-2">
-	            <Button onClick={handleExportar} variant="outline" size="sm">
-	              <Download className="w-4 h-4 mr-2" />
-	              Exportar
-	            </Button>
-	            <input
-	              type="file"
-	              ref={fileInputRef}
-	              onChange={handleImportar}
-	              accept=".json"
-	              style={{ display: 'none' }}
-	            />
-	            <Button onClick={handleImportClick} variant="outline" size="sm">
-	              <Upload className="w-4 h-4 mr-2" />
-	              Importar
-	            </Button>
-	          </div>
+
 	        </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
