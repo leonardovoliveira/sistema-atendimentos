@@ -74,6 +74,46 @@ function Dashboard({ atendimentos }) {
     return Object.values(meses)
   }, [atendimentos, dataExibicao])
 
+  // Encontrar o próximo pagamento
+  const proximoPagamento = useMemo(() => {
+    const hoje = new Date().toISOString().split('T')[0]; // Data de hoje no formato YYYY-MM-DD
+    
+    // Filtra atendimentos com data de pagamento futura e status que não seja 'Pago'
+    const atendimentosPendentes = atendimentos.filter(a => {
+      if (!a.data_prevista_pagamento || a.status === 'Pago') return false;
+      return a.data_prevista_pagamento >= hoje;
+    });
+
+    if (atendimentosPendentes.length === 0) {
+      return null;
+    }
+
+    // Encontra o atendimento com a data de pagamento mais próxima
+    const proximo = atendimentosPendentes.reduce((maisProximo, atual) => {
+      if (!maisProximo) return atual;
+      
+      const dataMaisProxima = new Date(maisProximo.data_prevista_pagamento + 'T03:00:00Z');
+      const dataAtual = new Date(atual.data_prevista_pagamento + 'T03:00:00Z');
+      
+      return dataAtual < dataMaisProxima ? atual : maisProximo;
+    }, null);
+
+    if (!proximo) return null;
+
+    // Calcula o valor a receber (Bruto - Adiantamento)
+    const valorBruto = calcularValorBruto(proximo);
+    const adiantamento = parseFloat(proximo.adiantamento_recebido) || 0;
+    const valorAReceber = valorBruto - adiantamento;
+
+    return {
+      valor: valorAReceber,
+      data: proximo.data_prevista_pagamento,
+      cliente: proximo.nome_cliente,
+      plataforma: proximo.plataforma,
+      status: proximo.status
+    };
+  }, [atendimentos]);
+
   // Calcular estatísticas gerais
   const estatisticas = useMemo(() => {
     const anoExibicao = dataExibicao.getFullYear()
@@ -202,58 +242,76 @@ function Dashboard({ atendimentos }) {
         <p className="mt-1 text-sm text-muted-foreground">Visão geral dos seus atendimentos e faturamento para {new Date(dataExibicao).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</p>
       </div>
 
-      {/* Cards de estatísticas */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+	      {/* Cards de estatísticas */}
+	      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+	        {/* Novo Card: Próximo Pagamento */}
 	        <Link to="/extrato" className="block hover:shadow-lg transition-shadow rounded-lg">
-	          <Card>
+	          <Card className="border-l-4 border-green-500">
 	            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-	              <CardTitle className="text-sm font-medium">Total de Atendimentos</CardTitle>
-	              <Calendar className="h-4 w-4 text-muted-foreground" />
+	              <CardTitle className="text-sm font-medium">Próximo Pagamento</CardTitle>
+	              <DollarSign className="h-4 w-4 text-green-500" />
 	            </CardHeader>
 	            <CardContent>
-	              <div className="text-2xl font-bold">{estatisticas.totalAtendimentos}</div>
-	              <p className="text-xs text-muted-foreground">no mês</p>
+	              <div className="text-2xl font-bold text-green-500">
+	                {proximoPagamento ? proximoPagamento.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'N/A'}
+	              </div>
+	              <p className="text-xs text-muted-foreground">
+	                {proximoPagamento ? `Previsto para ${new Date(proximoPagamento.data + 'T03:00:00Z').toLocaleDateString('pt-BR')} (${proximoPagamento.plataforma})` : 'Nenhum pagamento pendente futuro.'}
+	              </p>
 	            </CardContent>
 	          </Card>
 	        </Link>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Faturamento Bruto</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {estatisticas.totalBruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </div>
-            <p className="text-xs text-muted-foreground">no mês</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Faturamento Líquido</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {estatisticas.totalLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </div>
-            <p className="text-xs text-muted-foreground">no mês</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Horas Trabalhadas</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{estatisticas.totalHoras.toFixed(1)}h</div>
-            <p className="text-xs text-muted-foreground">no mês</p>
-          </CardContent>
-        </Card>
-      </div>
+	
+		        <Link to="/extrato" className="block hover:shadow-lg transition-shadow rounded-lg">
+		          <Card>
+		            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+		              <CardTitle className="text-sm font-medium">Total de Atendimentos</CardTitle>
+		              <Calendar className="h-4 w-4 text-muted-foreground" />
+		            </CardHeader>
+		            <CardContent>
+		              <div className="text-2xl font-bold">{estatisticas.totalAtendimentos}</div>
+		              <p className="text-xs text-muted-foreground">no mês</p>
+		            </CardContent>
+		          </Card>
+		        </Link>
+	
+	        <Card>
+	          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+	            <CardTitle className="text-sm font-medium">Faturamento Bruto</CardTitle>
+	            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+	          </CardHeader>
+	          <CardContent>
+	            <div className="text-2xl font-bold">
+	              {estatisticas.totalBruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+	            </div>
+	            <p className="text-xs text-muted-foreground">no mês</p>
+	          </CardContent>
+	        </Card>
+	
+	        <Card>
+	          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+	            <CardTitle className="text-sm font-medium">Faturamento Líquido</CardTitle>
+	            <DollarSign className="h-4 w-4 text-muted-foreground" />
+	          </CardHeader>
+	          <CardContent>
+	            <div className="text-2xl font-bold">
+	              {estatisticas.totalLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+	            </div>
+	            <p className="text-xs text-muted-foreground">no mês</p>
+	          </CardContent>
+	        </Card>
+	
+	        <Card>
+	          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+	            <CardTitle className="text-sm font-medium">Horas Trabalhadas</CardTitle>
+	            <Clock className="h-4 w-4 text-muted-foreground" />
+	          </CardHeader>
+	          <CardContent>
+	            <div className="text-2xl font-bold">{estatisticas.totalHoras.toFixed(1)}h</div>
+	            <p className="text-xs text-muted-foreground">no mês</p>
+	          </CardContent>
+	        </Card>
+	      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Calendário */}
