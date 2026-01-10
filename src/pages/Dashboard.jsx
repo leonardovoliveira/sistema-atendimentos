@@ -1,13 +1,12 @@
-import { useState, useMemo } from 'react'
+'''import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Calendar, TrendingUp, DollarSign, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 
 function Dashboard({ atendimentos }) {
   const [dataExibicao, setDataExibicao] = useState(new Date())
 
-  // Função para calcular horas trabalhadas
   const calcularHoras = (checkin, checkout) => {
     if (!checkin || !checkout) return 0
     const [hIn, mIn] = checkin.split(':').map(Number)
@@ -16,19 +15,16 @@ function Dashboard({ atendimentos }) {
     return totalMinutos / 60
   }
 
-  // Função para calcular valor bruto
   const calcularValorBruto = (atendimento) => {
     return (parseFloat(atendimento.valor_chamado) || 0) + (parseFloat(atendimento.ganhos_adicionais) || 0)
   }
 
-  // Função para calcular valor líquido
   const calcularValorLiquido = (atendimento) => {
     const bruto = calcularValorBruto(atendimento)
     const despesas = parseFloat(atendimento.despesas_os) || 0
     return bruto - despesas
   }
 
-  // Processar dados para o calendário
   const diasComAtendimentos = useMemo(() => {
     const dias = new Set()
     atendimentos.forEach(atendimento => {
@@ -39,12 +35,9 @@ function Dashboard({ atendimentos }) {
     return dias
   }, [atendimentos])
 
-  // Processar dados para gráficos mensais
   const dadosMensais = useMemo(() => {
     const anoExibicao = dataExibicao.getFullYear()
     const meses = {}
-    
-    // Inicializar todos os meses do ano atual
     for (let i = 1; i <= 12; i++) {
       const mesKey = `${anoExibicao}-${String(i).padStart(2, '0')}`
       meses[mesKey] = {
@@ -54,8 +47,6 @@ function Dashboard({ atendimentos }) {
         faturamentoLiquido: 0
       }
     }
-
-    // Processar atendimentos
     atendimentos.forEach(atendimento => {
       if (atendimento.data_atendimento) {
         const mesKey = atendimento.data_atendimento.substring(0, 7)
@@ -63,48 +54,34 @@ function Dashboard({ atendimentos }) {
           const bruto = calcularValorBruto(atendimento)
           const despesas = parseFloat(atendimento.despesas_os) || 0
           const liquido = calcularValorLiquido(atendimento)
-          
           meses[mesKey].faturamentoBruto += bruto
           meses[mesKey].despesas += despesas
           meses[mesKey].faturamentoLiquido += liquido
         }
       }
     })
-
     return Object.values(meses)
   }, [atendimentos, dataExibicao])
 
-  // Encontrar o próximo pagamento
   const proximoPagamento = useMemo(() => {
-    const hoje = new Date().toISOString().split('T')[0]; // Data de hoje no formato YYYY-MM-DD
-    
-    // Filtra atendimentos com data de pagamento futura e status que não seja 'Pago'
+    const hoje = new Date().toISOString().split('T')[0];
     const atendimentosPendentes = atendimentos.filter(a => {
       if (!a.data_prevista_pagamento || a.status === 'Pago') return false;
       return a.data_prevista_pagamento >= hoje;
     });
-
     if (atendimentosPendentes.length === 0) {
       return null;
     }
-
-    // Encontra o atendimento com a data de pagamento mais próxima
     const proximo = atendimentosPendentes.reduce((maisProximo, atual) => {
       if (!maisProximo) return atual;
-      
       const dataMaisProxima = new Date(maisProximo.data_prevista_pagamento + 'T03:00:00Z');
       const dataAtual = new Date(atual.data_prevista_pagamento + 'T03:00:00Z');
-      
       return dataAtual < dataMaisProxima ? atual : maisProximo;
     }, null);
-
     if (!proximo) return null;
-
-    // Calcula o valor a receber (Bruto - Adiantamento)
     const valorBruto = calcularValorBruto(proximo);
     const adiantamento = parseFloat(proximo.adiantamento_recebido) || 0;
     const valorAReceber = valorBruto - adiantamento;
-
     return {
       valor: valorAReceber,
       data: proximo.data_prevista_pagamento,
@@ -114,62 +91,18 @@ function Dashboard({ atendimentos }) {
     };
   }, [atendimentos]);
 
-  // Encontrar o próximo pagamento
-  const proximoPagamento = useMemo(() => {
-    const hoje = new Date().toISOString().split('T')[0]; // Data de hoje no formato YYYY-MM-DD
-    
-    // Filtra atendimentos com data de pagamento futura e status que não seja 'Pago'
-    const atendimentosPendentes = atendimentos.filter(a => {
-      if (!a.data_prevista_pagamento || a.status === 'Pago') return false;
-      return a.data_prevista_pagamento >= hoje;
-    });
-
-    if (atendimentosPendentes.length === 0) {
-      return null;
-    }
-
-    // Encontra o atendimento com a data de pagamento mais próxima
-    const proximo = atendimentosPendentes.reduce((maisProximo, atual) => {
-      if (!maisProximo) return atual;
-      
-      const dataMaisProxima = new Date(maisProximo.data_prevista_pagamento + 'T03:00:00Z');
-      const dataAtual = new Date(atual.data_prevista_pagamento + 'T03:00:00Z');
-      
-      return dataAtual < dataMaisProxima ? atual : maisProximo;
-    }, null);
-
-    if (!proximo) return null;
-
-    // Calcula o valor a receber (Bruto - Adiantamento)
-    const valorBruto = calcularValorBruto(proximo);
-    const adiantamento = parseFloat(proximo.adiantamento_recebido) || 0;
-    const valorAReceber = valorBruto - adiantamento;
-
-    return {
-      valor: valorAReceber,
-      data: proximo.data_prevista_pagamento,
-      cliente: proximo.nome_cliente,
-      plataforma: proximo.plataforma,
-      status: proximo.status
-    };
-  }, [atendimentos]);
-
-  // Calcular estatísticas gerais
   const estatisticas = useMemo(() => {
     const anoExibicao = dataExibicao.getFullYear()
     const mesExibicao = dataExibicao.getMonth()
-
     const atendimentosMes = atendimentos.filter(a => {
       if (!a.data_atendimento) return false
       const dataAtendimento = new Date(a.data_atendimento + 'T03:00:00Z')
       return dataAtendimento.getFullYear() === anoExibicao && dataAtendimento.getMonth() === mesExibicao
     })
-
     const totalBruto = atendimentosMes.reduce((acc, a) => acc + calcularValorBruto(a), 0)
     const totalDespesas = atendimentosMes.reduce((acc, a) => acc + (parseFloat(a.despesas_os) || 0), 0)
     const totalLiquido = totalBruto - totalDespesas
     const totalHoras = atendimentosMes.reduce((acc, a) => acc + calcularHoras(a.checkin, a.checkout), 0)
-
     return {
       totalAtendimentos: atendimentosMes.length,
       totalBruto,
@@ -179,7 +112,6 @@ function Dashboard({ atendimentos }) {
     }
   }, [atendimentos, dataExibicao])
 
-  // Faturamento por plataforma
   const faturamentoPorPlataforma = useMemo(() => {
     const plataformas = {}
     const atendimentosMes = atendimentos.filter(a => {
@@ -187,14 +119,12 @@ function Dashboard({ atendimentos }) {
       const dataAtendimento = new Date(a.data_atendimento + 'T03:00:00Z')
       return dataAtendimento.getFullYear() === dataExibicao.getFullYear() && dataAtendimento.getMonth() === dataExibicao.getMonth()
     })
-
     atendimentosMes.forEach(atendimento => {
       if (!plataformas[atendimento.plataforma]) {
         plataformas[atendimento.plataforma] = 0
       }
       plataformas[atendimento.plataforma] += calcularValorBruto(atendimento)
     })
-
     return Object.entries(plataformas).map(([plataforma, faturamento]) => ({ plataforma, faturamento }))
   }, [atendimentos, dataExibicao])
 
@@ -206,28 +136,20 @@ function Dashboard({ atendimentos }) {
     })
   }
 
-  // Renderizar calendário simples
   const renderCalendario = () => {
     const mesAtual = dataExibicao.getMonth()
     const anoAtual = dataExibicao.getFullYear()
-    
     const primeiroDia = new Date(anoAtual, mesAtual, 1).getDay()
     const ultimoDia = new Date(anoAtual, mesAtual + 1, 0).getDate()
-    
     const dias = []
     const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-    
-    // Adicionar dias vazios antes do primeiro dia
     for (let i = 0; i < primeiroDia; i++) {
       dias.push(<div key={`empty-${i}`} className="h-10"></div>)
     }
-    
-    // Adicionar dias do mês
     for (let dia = 1; dia <= ultimoDia; dia++) {
       const dataStr = `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
       const temAtendimento = diasComAtendimentos.has(dataStr)
       const ehHoje = dia === new Date().getDate() && mesAtual === new Date().getMonth() && anoAtual === new Date().getFullYear()
-      
       dias.push(
         <div
           key={dia}
@@ -243,7 +165,6 @@ function Dashboard({ atendimentos }) {
         </div>
       )
     }
-    
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -282,62 +203,76 @@ function Dashboard({ atendimentos }) {
         <p className="mt-1 text-sm text-muted-foreground">Visão geral dos seus atendimentos e faturamento para {new Date(dataExibicao).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</p>
       </div>
 
-			      {/* Cards de estatísticas */}
-			      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-			        {/* Novo Card: Próximo Pagamento */}
-			        <Link to="/extrato" className="block hover:shadow-lg transition-shadow rounded-lg">
-			          <Card className="border-l-4 border-green-500">
-			            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-			              <CardTitle className="text-sm font-medium">Próximo Pagamento</CardTitle>
-			              <DollarSign className="h-4 w-4 text-green-500" />
-			            </CardHeader>
-			            <CardContent>
-			              <div className="text-2xl font-bold text-green-500">
-			                {proximoPagamento ? proximoPagamento.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'N/A'}
-			              </div>
-			              <p className="text-xs text-muted-foreground">
-			                {proximoPagamento ? `Previsto para ${new Date(proximoPagamento.data + 'T03:00:00Z').toLocaleDateString('pt-BR')} (${proximoPagamento.plataforma})` : 'Nenhum pagamento pendente futuro.'}
-			              </p>
-			            </CardContent>
-			          </Card>
-			        </Link>
-			        <Link to="/extrato" className="block hover:shadow-lg transition-shadow rounded-lg">
-			          <Card>
-			            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-			              <CardTitle className="text-sm font-medium">Total de Atendimentos</CardTitle>
-			              <Calendar className="h-4 w-4 text-muted-foreground" />
-			            </CardHeader>
-			            <CardContent>
-			              <div className="text-2xl font-bold">{estatisticas.totalAtendimentos}</div>
-			              <p className="text-xs text-muted-foreground">no mês</p>
-			            </CardContent>
-			          </Card>
-			        </Link>ems-center justify-between space-y-0 pb-2">
-	            <CardTitle className="text-sm font-medium">Faturamento Líquido</CardTitle>
-	            <DollarSign className="h-4 w-4 text-muted-foreground" />
-	          </CardHeader>
-	          <CardContent>
-	            <div className="text-2xl font-bold">
-	              {estatisticas.totalLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-	            </div>
-	            <p className="text-xs text-muted-foreground">no mês</p>
-	          </CardContent>
-	        </Card>
-	
-	        <Card>
-	          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-	            <CardTitle className="text-sm font-medium">Horas Trabalhadas</CardTitle>
-	            <Clock className="h-4 w-4 text-muted-foreground" />
-	          </CardHeader>
-	          <CardContent>
-	            <div className="text-2xl font-bold">{estatisticas.totalHoras.toFixed(1)}h</div>
-	            <p className="text-xs text-muted-foreground">no mês</p>
-	          </CardContent>
-	        </Card>
-	      </div>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        <Link to="/extrato" className="block hover:shadow-lg transition-shadow rounded-lg">
+          <Card className="border-l-4 border-green-500">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Próximo Pagamento</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-500">
+                {proximoPagamento ? proximoPagamento.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'N/A'}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {proximoPagamento ? `Previsto para ${new Date(proximoPagamento.data + 'T03:00:00Z').toLocaleDateString('pt-BR')} (${proximoPagamento.plataforma})` : 'Nenhum pagamento pendente futuro.'}
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/extrato" className="block hover:shadow-lg transition-shadow rounded-lg">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total de Atendimentos</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{estatisticas.totalAtendimentos}</div>
+              <p className="text-xs text-muted-foreground">no mês</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Faturamento Bruto</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {estatisticas.totalBruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </div>
+            <p className="text-xs text-muted-foreground">no mês</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Faturamento Líquido</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {estatisticas.totalLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </div>
+            <p className="text-xs text-muted-foreground">no mês</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Horas Trabalhadas</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{estatisticas.totalHoras.toFixed(1)}h</div>
+            <p className="text-xs text-muted-foreground">no mês</p>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Calendário */}
         <Card>
           <CardHeader>
             <CardTitle>Calendário de Atendimentos</CardTitle>
@@ -347,31 +282,31 @@ function Dashboard({ atendimentos }) {
           </CardContent>
         </Card>
 
-        {/* Faturamento por Plataforma */}
         <Card>
           <CardHeader>
             <CardTitle>Faturamento por Plataforma</CardTitle>
             <CardDescription>Faturamento bruto por plataforma no mês de {new Date(dataExibicao).toLocaleString('pt-BR', { month: 'long' })}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {faturamentoPorPlataforma.length > 0 ? (
-                faturamentoPorPlataforma.map(({ plataforma, faturamento }) => (
-                  <div key={plataforma} className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{plataforma}</span>
-                    <span className="text-sm font-bold">{faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">Nenhum faturamento registrado para este mês.</p>
-              )}
-            </div>
+            {faturamentoPorPlataforma.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={faturamentoPorPlataforma}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="plataforma" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
+                  <Legend />
+                  <Bar dataKey="faturamento" fill="#8884d8" name="Faturamento" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p>Nenhum faturamento registrado para este mês.</p>
+            )}
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Gráfico de Faturamento Mensal */}
         <Card>
           <CardHeader>
             <CardTitle>Faturamento Mensal</CardTitle>
@@ -379,23 +314,20 @@ function Dashboard({ atendimentos }) {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dadosMensais}>
+              <LineChart data={dadosMensais}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" />
                 <YAxis />
-                <Tooltip 
-                  formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                />
+                <Tooltip formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 <Legend />
-                <Bar dataKey="faturamentoBruto" fill="#3b82f6" name="Faturamento Bruto" />
-                <Bar dataKey="despesas" fill="#ef4444" name="Despesas" />
-                <Bar dataKey="faturamentoLiquido" fill="#10b981" name="Faturamento Líquido" />
-              </BarChart>
+                <Line type="monotone" dataKey="faturamentoBruto" stroke="#8884d8" name="Faturamento Bruto" />
+                <Line type="monotone" dataKey="despesas" stroke="#82ca9d" name="Despesas" />
+                <Line type="monotone" dataKey="faturamentoLiquido" stroke="#ffc658" name="Faturamento Líquido" />
+              </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Gráfico de Evolução do Faturamento Bruto */}
         <Card>
           <CardHeader>
             <CardTitle>Evolução do Faturamento Bruto</CardTitle>
@@ -407,19 +339,9 @@ function Dashboard({ atendimentos }) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" />
                 <YAxis />
-                <Tooltip 
-                  formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                />
+                <Tooltip formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="faturamentoBruto" 
-                  stroke="#3b82f6" 
-                  strokeWidth={2}
-                  name="Faturamento Bruto"
-                  dot={{ fill: '#3b82f6', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
+                <Line type="monotone" dataKey="faturamentoBruto" stroke="#8884d8" name="Faturamento Bruto" />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -430,4 +352,4 @@ function Dashboard({ atendimentos }) {
 }
 
 export default Dashboard
-
+'''
