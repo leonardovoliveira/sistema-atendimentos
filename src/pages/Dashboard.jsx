@@ -64,12 +64,14 @@ function Dashboard({ atendimentos }) {
   }, [atendimentos, dataExibicao])
 
   const proximoPagamento = useMemo(() => {
+    console.log("Dashboard: Atendimentos recebidos para proximoPagamento:", atendimentos);
     const hoje = new Date().toISOString().split('T')[0];
     const atendimentosPendentes = atendimentos.filter(a => {
       if (!a.data_prevista_pagamento || a.status === 'Pago') return false;
       return a.data_prevista_pagamento >= hoje;
     });
     if (atendimentosPendentes.length === 0) {
+      console.log("Dashboard: Nenhum atendimento pendente futuro encontrado para proximoPagamento.");
       return null;
     }
     const proximo = atendimentosPendentes.reduce((maisProximo, atual) => {
@@ -78,17 +80,22 @@ function Dashboard({ atendimentos }) {
       const dataAtual = new Date(atual.data_prevista_pagamento + 'T03:00:00Z');
       return dataAtual < dataMaisProxima ? atual : maisProximo;
     }, null);
-    if (!proximo) return null;
+    if (!proximo) {
+      console.log("Dashboard: Nenhum próximo pagamento encontrado após redução em proximoPagamento.");
+      return null;
+    }
     const valorBruto = calcularValorBruto(proximo);
     const adiantamento = parseFloat(proximo.adiantamento_recebido) || 0;
     const valorAReceber = valorBruto - adiantamento;
-    return {
+    const result = {
       valor: valorAReceber,
       data: proximo.data_prevista_pagamento,
       cliente: proximo.nome_cliente,
       plataforma: proximo.plataforma,
       status: proximo.status
     };
+    console.log("Dashboard: Próximo Pagamento calculado:", result);
+    return result;
   }, [atendimentos]);
 
   const estatisticas = useMemo(() => {
