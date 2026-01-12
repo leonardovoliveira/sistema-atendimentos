@@ -1,4 +1,4 @@
-'''import { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
@@ -65,28 +65,34 @@ function Dashboard({ atendimentos }) {
 
   const proximoPagamento = useMemo(() => {
     console.log("Dashboard: Atendimentos recebidos para proximoPagamento:", atendimentos);
+
     const hoje = new Date().toISOString().split('T')[0];
     const atendimentosPendentes = atendimentos.filter(a => {
       if (!a.data_prevista_pagamento || a.status === 'Pago') return false;
       return a.data_prevista_pagamento >= hoje;
     });
+
     if (atendimentosPendentes.length === 0) {
       console.log("Dashboard: Nenhum atendimento pendente futuro encontrado para proximoPagamento.");
       return null;
     }
+
     const proximo = atendimentosPendentes.reduce((maisProximo, atual) => {
       if (!maisProximo) return atual;
       const dataMaisProxima = new Date(maisProximo.data_prevista_pagamento + 'T03:00:00Z');
       const dataAtual = new Date(atual.data_prevista_pagamento + 'T03:00:00Z');
       return dataAtual < dataMaisProxima ? atual : maisProximo;
     }, null);
+
     if (!proximo) {
       console.log("Dashboard: Nenhum próximo pagamento encontrado após redução em proximoPagamento.");
       return null;
     }
+
     const valorBruto = calcularValorBruto(proximo);
     const adiantamento = parseFloat(proximo.adiantamento_recebido) || 0;
     const valorAReceber = valorBruto - adiantamento;
+
     const result = {
       valor: valorAReceber,
       data: proximo.data_prevista_pagamento,
@@ -292,22 +298,20 @@ function Dashboard({ atendimentos }) {
         <Card>
           <CardHeader>
             <CardTitle>Faturamento por Plataforma</CardTitle>
-            <CardDescription>Faturamento bruto por plataforma no mês de {new Date(dataExibicao).toLocaleString('pt-BR', { month: 'long' })}</CardDescription>
           </CardHeader>
           <CardContent>
             {faturamentoPorPlataforma.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={faturamentoPorPlataforma}>
-                  <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="plataforma" />
                   <YAxis />
                   <Tooltip formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                   <Legend />
-                  <Bar dataKey="faturamento" fill="#8884d8" name="Faturamento" />
+                  <Bar dataKey="faturamento" fill="#8884d8" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p>Nenhum faturamento registrado para este mês.</p>
+              <p className="text-muted-foreground">Nenhum faturamento registrado para este mês.</p>
             )}
           </CardContent>
         </Card>
@@ -317,14 +321,14 @@ function Dashboard({ atendimentos }) {
         <Card>
           <CardHeader>
             <CardTitle>Faturamento Mensal</CardTitle>
-            <CardDescription>Comparação de faturamento bruto, despesas e líquido no ano de {dataExibicao.getFullYear()}</CardDescription>
           </CardHeader>
           <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">Comparação de faturamento bruto, despesas e líquido no ano de {dataExibicao.getFullYear()}</p>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={dadosMensais}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" />
-                <YAxis />
+                <YAxis formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 <Tooltip formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 <Legend />
                 <Line type="monotone" dataKey="faturamentoBruto" stroke="#8884d8" name="Faturamento Bruto" />
@@ -338,14 +342,14 @@ function Dashboard({ atendimentos }) {
         <Card>
           <CardHeader>
             <CardTitle>Evolução do Faturamento Bruto</CardTitle>
-            <CardDescription>Comparação mês a mês no ano de {dataExibicao.getFullYear()}</CardDescription>
           </CardHeader>
           <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">Comparação mês a mês no ano de {dataExibicao.getFullYear()}</p>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={dadosMensais}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" />
-                <YAxis />
+                <YAxis formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 <Tooltip formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 <Legend />
                 <Line type="monotone" dataKey="faturamentoBruto" stroke="#8884d8" name="Faturamento Bruto" />
@@ -359,4 +363,3 @@ function Dashboard({ atendimentos }) {
 }
 
 export default Dashboard
-'''
