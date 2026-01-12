@@ -110,12 +110,15 @@ function App() {
   useEffect(() => {
     const savedData = localStorage.getItem('atendimentos')
     if (savedData) {
-      setAtendimentos(JSON.parse(savedData))
+      const parsedData = JSON.parse(savedData);
+      console.log("App: Atendimentos carregados do localStorage:", parsedData);
+      setAtendimentos(parsedData);
     }
   }, [])
 
   // Salvar dados no localStorage sempre que houver alteração
   useEffect(() => {
+    console.log("App: Atendimentos salvos no localStorage:", atendimentos);
     localStorage.setItem("atendimentos", JSON.stringify(atendimentos));
   }, [atendimentos])
 
