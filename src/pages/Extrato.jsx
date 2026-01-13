@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -291,17 +291,25 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
   )
 }
 
-function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
+function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setPropAtendimentos = () => {} }) {
   const [editandoId, setEditandoId] = useState(null);
   const [filtroMes, setFiltroMes] = useState(new Date().toISOString().substring(0, 7));
   const [filtroPlataforma, setFiltroPlataforma] = useState('all');
   const [filtroStatus, setFiltroStatus] = useState('all');
-  const [atendimentos, setAtendimentos] = useState([])
-  const fileInputRef = useRef(null)
+  const [localAtendimentos, setLocalAtendimentos] = useState(propAtendimentos);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    setLocalAtendimentos(propAtendimentos);
+  }, [propAtendimentos]);
+
+  useEffect(() => {
+    setPropAtendimentos(localAtendimentos);
+  }, [localAtendimentos, setPropAtendimentos]);
 
   // Lógica de Exportação
   const handleExportar = () => {
-    const dataStr = JSON.stringify(atendimentos, null, 2)
+    const dataStr = JSON.stringify(localAtendimentos, null, 2)
     const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr)
 
     const exportFileDefaultName = 'extrato_atendimentos.json'
@@ -322,7 +330,7 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
       try {
         const importedData = JSON.parse(e.target.result)
         if (Array.isArray(importedData)) {
-          setAtendimentos(importedData)
+          setLocalAtendimentos(importedData)
           alert('Dados importados com sucesso!')
         } else {
           alert('Formato de arquivo inválido. Esperado um array de atendimentos.')
@@ -337,7 +345,9 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
   // Função para acionar o input de arquivo
   const handleImportClick = () => {
     fileInputRef.current.click()
-  }({
+  }
+
+  const [novoAtendimento, setNovoAtendimento] = useState({
     data_atendimento: '',
     checkin: '',
     checkout: '',
@@ -364,7 +374,7 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
       id: Date.now().toString()
     }
 
-    setAtendimentos([...atendimentos, atendimento])
+    setLocalAtendimentos([...localAtendimentos, atendimento])
     setNovoAtendimento({
       data_atendimento: '',
       checkin: '',
@@ -401,7 +411,7 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
   const statusComTodos = [{ value: 'all', label: 'Todos os Status' }, ...statusOpcoes.map(s => ({ value: s, label: s }))];
 
   const atendimentosFiltrados = useMemo(() => {
-    const atendimentosFiltrados = atendimentos.filter(atendimento => {
+    const atendimentosFiltrados = localAtendimentos.filter(atendimento => {
       const dataAtendimento = atendimento.data_atendimento ? new Date(atendimento.data_atendimento + 'T03:00:00Z') : null;
       const mesAtendimento = dataAtendimento ? (dataAtendimento.getMonth() + 1).toString().padStart(2, '0') : '';
 
@@ -430,9 +440,18 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
       if (checkinA > checkinB) return 1;
       return 0;
     });
-  }, [atendimentos, filtroMes, filtroPlataforma, filtroStatus]);
+  }, [localAtendimentos, filtroMes, filtroPlataforma, filtroStatus]);
 
   const totalLiquidoFiltrado = atendimentosFiltrados.reduce((acc, atendimento) => acc + calcularValorLiquido(atendimento), 0);
+
+  const handleSalvarEdicao = (id, atendimentoAtualizado) => {
+    setLocalAtendimentos(localAtendimentos.map(att => att.id === id ? atendimentoAtualizado : att));
+    setEditandoId(null);
+  };
+
+  const handleExcluir = (id) => {
+    setLocalAtendimentos(localAtendimentos.filter(att => att.id !== id));
+  };
 
   return (
     <div className="space-y-6">
@@ -457,13 +476,13 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
         </div>
       </div>
       <Card>
-	        <CardHeader className="flex flex-row items-center justify-between">
-	          <div>
-	            <CardTitle className="text-xl font-bold">Filtros e Resumo</CardTitle>
-	            <CardDescription>Filtre os atendimentos e veja o resumo financeiro.</CardDescription>
-	          </div>
+		        <CardHeader className="flex flex-row items-center justify-between">
+		          <div>
+		            <CardTitle className="text-xl font-bold">Filtros e Resumo</CardTitle>
+		            <CardDescription>Filtre os atendimentos e veja o resumo financeiro.</CardDescription>
+		          </div>
 
-	        </CardHeader>
+		        </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
             <Label>Filtrar por Mês</Label>
@@ -526,30 +545,23 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
               <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Plataforma</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Prev. Pag.</th>
-              <th className="px-3 py-2 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor</th>
-              <th className="px-3 py-2 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Adicionais</th>
-              <th className="px-3 py-2 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Despesas</th>
-              <th className="px-3 py-2 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Adiant.</th>
-              <th className="px-3 py-2 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Bruto</th>
-              <th className="px-3 py-2 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Líquido</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Adicionais</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Despesas</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Adiant.</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Bruto</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Líquido</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
               <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
-            {atendimentosFiltrados.map((atendimento) => (
+          <tbody>
+            {atendimentosFiltrados.map(atendimento => (
               <AtendimentoRow
                 key={atendimento.id}
                 atendimento={atendimento}
-                handleSalvarEdicao={(id, atendimentoEditado) => {
-                  const novosAtendimentos = atendimentos.map(a => a.id === id ? atendimentoEditado : a)
-                  setAtendimentos(novosAtendimentos)
-                  setEditandoId(null)
-                }}
-                handleExcluir={(id) => {
-                  const novosAtendimentos = atendimentos.filter(a => a.id !== id)
-                  setAtendimentos(novosAtendimentos)
-                }}
+                handleSalvarEdicao={handleSalvarEdicao}
+                handleExcluir={handleExcluir}
                 editandoId={editandoId}
                 setEditandoId={setEditandoId}
               />
@@ -558,83 +570,82 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
         </table>
       </div>
 
-      {/* Adicionar Novo Atendimento */}
+      {/* Formulário para Adicionar Novo Atendimento */}
       <Card>
         <CardHeader>
           <CardTitle>Adicionar Novo Atendimento</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="space-y-2">
-            <Label>Data</Label>
-            <Input type="date" value={novoAtendimento.data_atendimento} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, data_atendimento: e.target.value })} />
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label>Data</Label>
+              <Input type="date" value={novoAtendimento.data_atendimento} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, data_atendimento: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Check-in</Label>
+              <Input type="time" value={novoAtendimento.checkin} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, checkin: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Check-out</Label>
+              <Input type="time" value={novoAtendimento.checkout} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, checkout: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Número da OS</Label>
+              <Input value={novoAtendimento.numero_os} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, numero_os: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Nome do Cliente</Label>
+              <Input value={novoAtendimento.nome_cliente} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, nome_cliente: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Plataforma</Label>
+              <Select value={novoAtendimento.plataforma} onValueChange={(value) => setNovoAtendimento({ ...novoAtendimento, plataforma: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {plataformas.map(p => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Previsão de Pagamento</Label>
+              <Input type="date" value={novoAtendimento.data_prevista_pagamento} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, data_prevista_pagamento: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Valor do Chamado</Label>
+              <Input type="number" step="0.01" value={novoAtendimento.valor_chamado} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, valor_chamado: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Ganhos Adicionais</Label>
+              <Input type="number" step="0.01" value={novoAtendimento.ganhos_adicionais} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, ganhos_adicionais: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Despesas na OS</Label>
+              <Input type="number" step="0.01" value={novoAtendimento.despesas_os} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, despesas_os: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Adiantamento Recebido</Label>
+              <Input type="number" step="0.01" value={novoAtendimento.adiantamento_recebido} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, adiantamento_recebido: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={novoAtendimento.status} onValueChange={(value) => setNovoAtendimento({ ...novoAtendimento, status: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOpcoes.map(s => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Check-in</Label>
-            <Input type="time" value={novoAtendimento.checkin} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, checkin: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Check-out</Label>
-            <Input type="time" value={novoAtendimento.checkout} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, checkout: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Número da OS</Label>
-            <Input value={novoAtendimento.numero_os} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, numero_os: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Nome do Cliente</Label>
-            <Input value={novoAtendimento.nome_cliente} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, nome_cliente: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Plataforma</Label>
-            <Select value={novoAtendimento.plataforma} onValueChange={(value) => setNovoAtendimento({ ...novoAtendimento, plataforma: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {plataformas.map(p => (
-                  <SelectItem key={p} value={p}>{p}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Previsão de Pagamento</Label>
-            <Input type="date" value={novoAtendimento.data_prevista_pagamento} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, data_prevista_pagamento: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Valor do Chamado</Label>
-            <Input type="number" step="0.01" value={novoAtendimento.valor_chamado} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, valor_chamado: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Ganhos Adicionais</Label>
-            <Input type="number" step="0.01" value={novoAtendimento.ganhos_adicionais} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, ganhos_adicionais: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Despesas na OS</Label>
-            <Input type="number" step="0.01" value={novoAtendimento.despesas_os} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, despesas_os: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Adiantamento Recebido</Label>
-            <Input type="number" step="0.01" value={novoAtendimento.adiantamento_recebido} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, adiantamento_recebido: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <Select value={novoAtendimento.status} onValueChange={(value) => setNovoAtendimento({ ...novoAtendimento, status: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOpcoes.map(s => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-end">
-            <Button onClick={handleAdicionar} className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Atendimento
-            </Button>
+          <div className="mt-4">
+            <Button onClick={handleAdicionar}><Plus className="w-4 h-4 mr-2" />Adicionar Atendimento</Button>
           </div>
         </CardContent>
       </Card>
@@ -642,4 +653,4 @@ function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
   )
 }
 
-export default Extrato
+export default Extrato;
