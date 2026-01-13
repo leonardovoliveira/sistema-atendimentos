@@ -293,7 +293,7 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
 
 function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setPropAtendimentos = () => {} }) {
   const [editandoId, setEditandoId] = useState(null);
-  const [filtroMes, setFiltroMes] = useState(new Date().toISOString().substring(0, 7));
+    const [filtroMes, setFiltroMes] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [filtroPlataforma, setFiltroPlataforma] = useState('all');
   const [filtroStatus, setFiltroStatus] = useState('all');
   const [localAtendimentos, setLocalAtendimentos] = useState(propAtendimentos);
