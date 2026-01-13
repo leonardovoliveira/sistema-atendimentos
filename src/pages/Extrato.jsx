@@ -293,7 +293,7 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
 
 function Extrato({ atendimentos = [], setAtendimentos = () => {} }) {
   const [editandoId, setEditandoId] = useState(null);
-  const [filtroMes, setFiltroMes] = useState('all');
+  const [filtroMes, setFiltroMes] = useState(new Date().toISOString().substring(0, 7));
   const [filtroPlataforma, setFiltroPlataforma] = useState('all');
   const [filtroStatus, setFiltroStatus] = useState('all');
   const [atendimentos, setAtendimentos] = useState([])
