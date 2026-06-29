@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Edit2, Trash2, Save, X, Download, Upload } from 'lucide-react'
+import { Plus, Edit2, Trash2, Save, X, Download, Upload, Calendar } from 'lucide-react'
 
 // Função para calcular horas trabalhadas
 const calcularHoras = (checkin, checkout) => {
@@ -293,7 +293,14 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
 
 function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setPropAtendimentos = () => {} }) {
   const [editandoId, setEditandoId] = useState(null);
-    const [filtroMes, setFiltroMes] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
+  
+  // Inicializar com o primeiro e último dia do mês atual
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+  
+  const [dataInicio, setDataInicio] = useState(firstDay);
+  const [dataFim, setDataFim] = useState(lastDay);
   const [filtroPlataforma, setFiltroPlataforma] = useState('all');
   const [filtroStatus, setFiltroStatus] = useState('all');
   const [localAtendimentos, setLocalAtendimentos] = useState(propAtendimentos);
@@ -391,48 +398,30 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
     });
   }
 
-  const meses = [
-    { value: 'all', label: 'Todos os Meses' },
-    { value: '01', label: 'Janeiro' },
-    { value: '02', label: 'Fevereiro' },
-    { value: '03', label: 'Março' },
-    { value: '04', label: 'Abril' },
-    { value: '05', label: 'Maio' },
-    { value: '06', label: 'Junho' },
-    { value: '07', label: 'Julho' },
-    { value: '08', label: 'Agosto' },
-    { value: '09', label: 'Setembro' },
-    { value: '10', label: 'Outubro' },
-    { value: '11', label: 'Novembro' },
-    { value: '12', label: 'Dezembro' },
-  ];
-
   const plataformasComTodos = [{ value: 'all', label: 'Todas as Plataformas' }, ...plataformas.map(p => ({ value: p, label: p }))];
   const statusComTodos = [{ value: 'all', label: 'Todos os Status' }, ...statusOpcoes.map(s => ({ value: s, label: s }))];
 
   const atendimentosFiltrados = useMemo(() => {
-    const atendimentosFiltrados = localAtendimentos.filter(atendimento => {
-      const dataAtendimento = atendimento.data_atendimento ? new Date(atendimento.data_atendimento + 'T03:00:00Z') : null;
-      const mesAtendimento = dataAtendimento ? (dataAtendimento.getMonth() + 1).toString().padStart(2, '0') : '';
-
-      const mesCorresponde = filtroMes === 'all' || (dataAtendimento && mesAtendimento === filtroMes);
+    const filtrados = localAtendimentos.filter(atendimento => {
+      const dataAtendimentoStr = atendimento.data_atendimento;
+      
+      const dataCorresponde = (!dataInicio || dataAtendimentoStr >= dataInicio) && 
+                             (!dataFim || dataAtendimentoStr <= dataFim);
       const plataformaCorresponde = filtroPlataforma === 'all' || atendimento.plataforma === filtroPlataforma;
       const statusCorresponde = filtroStatus === 'all' || atendimento.status === filtroStatus;
 
-      return mesCorresponde && plataformaCorresponde && statusCorresponde;
+      return dataCorresponde && plataformaCorresponde && statusCorresponde;
     });
 
     // Ordenar por data (crescente) e check-in (crescente)
-    return [...atendimentosFiltrados].sort((a, b) => {
-      // 1. Comparar a data
+    return [...filtrados].sort((a, b) => {
       const dataA = new Date(a.data_atendimento);
       const dataB = new Date(b.data_atendimento);
 
       if (dataA.getTime() !== dataB.getTime()) {
-        return dataA.getTime() - dataB.getTime(); // Crescente por data
+        return dataA.getTime() - dataB.getTime();
       }
 
-      // 2. Se as datas forem iguais, comparar o check-in (formato HH:MM)
       const checkinA = a.checkin;
       const checkinB = b.checkin;
 
@@ -440,7 +429,7 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
       if (checkinA > checkinB) return 1;
       return 0;
     });
-  }, [localAtendimentos, filtroMes, filtroPlataforma, filtroStatus]);
+  }, [localAtendimentos, dataInicio, dataFim, filtroPlataforma, filtroStatus]);
 
   const totalLiquidoFiltrado = atendimentosFiltrados.reduce((acc, atendimento) => acc + calcularValorLiquido(atendimento), 0);
 
@@ -476,29 +465,39 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
         </div>
       </div>
       <Card>
-		        <CardHeader className="flex flex-row items-center justify-between">
-		          <div>
-		            <CardTitle className="text-xl font-bold">Filtros e Resumo</CardTitle>
-		            <CardDescription>Filtre os atendimentos e veja o resumo financeiro.</CardDescription>
-		          </div>
-
-		        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-xl font-bold">Filtros e Resumo</CardTitle>
+            <CardDescription>Filtre os atendimentos por período, plataforma e status.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="space-y-2">
-            <Label>Filtrar por Mês</Label>
-            <Select value={filtroMes} onValueChange={setFiltroMes}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o Mês" />
-              </SelectTrigger>
-              <SelectContent>
-                {meses.map(m => (
-                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Data Início</Label>
+            <div className="relative">
+              <Input 
+                type="date" 
+                value={dataInicio} 
+                onChange={(e) => setDataInicio(e.target.value)} 
+                className="pl-10"
+              />
+              <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label>Filtrar por Plataforma</Label>
+            <Label>Data Fim</Label>
+            <div className="relative">
+              <Input 
+                type="date" 
+                value={dataFim} 
+                onChange={(e) => setDataFim(e.target.value)} 
+                className="pl-10"
+              />
+              <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Plataforma</Label>
             <Select value={filtroPlataforma} onValueChange={setFiltroPlataforma}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a Plataforma" />
@@ -511,7 +510,7 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Filtrar por Status</Label>
+            <Label>Status</Label>
             <Select value={filtroStatus} onValueChange={setFiltroStatus}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o Status" />
@@ -524,7 +523,7 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
             </Select>
           </div>
           <div className="space-y-2 flex flex-col justify-end">
-            <Label className="text-lg font-semibold">Total Líquido Filtrado</Label>
+            <Label className="text-lg font-semibold">Total Líquido</Label>
             <span className="text-2xl font-bold text-green-500">
               {totalLiquidoFiltrado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </span>
