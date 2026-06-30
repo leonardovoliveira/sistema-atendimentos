@@ -1,24 +1,17 @@
 import { useMemo, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Calendar, TrendingUp, Clock, DollarSign, FileText } from 'lucide-react'
 
 function Relatorios({ atendimentos }) {
-  // Obter anos disponíveis
-  const anosDisponiveis = useMemo(() => {
-    const anos = new Set()
-    atendimentos.forEach(atendimento => {
-      if (atendimento.data_atendimento) {
-        const ano = atendimento.data_atendimento.substring(0, 4)
-        anos.add(ano)
-      }
-    })
-    return Array.from(anos).sort((a, b) => b - a)
-  }, [atendimentos])
-
-  const [anoSelecionado, setAnoSelecionado] = useState(
-    anosDisponiveis.length > 0 ? anosDisponiveis[0] : new Date().getFullYear().toString()
-  )
+  // Inicializar com o primeiro e último dia do mês atual
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+  
+  const [dataInicio, setDataInicio] = useState(firstDay);
+  const [dataFim, setDataFim] = useState(lastDay);
 
   // Função para calcular horas trabalhadas
   const calcularHoras = (checkin, checkout) => {
@@ -34,94 +27,111 @@ function Relatorios({ atendimentos }) {
     return (parseFloat(atendimento.valor_chamado) || 0) + (parseFloat(atendimento.ganhos_adicionais) || 0)
   }
 
-  // Processar dados mensais
+  // Filtrar atendimentos pelo período selecionado
+  const atendimentosFiltrados = useMemo(() => {
+    return atendimentos.filter(atendimento => {
+      const dataAtendimentoStr = atendimento.data_atendimento;
+      return (!dataInicio || dataAtendimentoStr >= dataInicio) && 
+             (!dataFim || dataAtendimentoStr <= dataFim);
+    });
+  }, [atendimentos, dataInicio, dataFim]);
+
+  // Processar dados mensais baseados nos atendimentos filtrados
   const dadosMensais = useMemo(() => {
     const meses = {}
     
-    // Inicializar todos os meses do ano selecionado
-    for (let i = 1; i <= 12; i++) {
-      const mesKey = `${anoSelecionado}-${String(i).padStart(2, '0')}`
-      meses[mesKey] = {
-        mes: new Date(parseInt(anoSelecionado), i - 1).toLocaleString('pt-BR', { month: 'long' }),
-        mesNumero: i,
-        quantidadeOS: 0,
-        faturamentoTotal: 0,
-        horasTrabalhadas: 0,
-        atendimentos: []
-      }
-    }
-
-    // Processar atendimentos do ano selecionado
-    atendimentos.forEach(atendimento => {
-      if (atendimento.data_atendimento && atendimento.data_atendimento.startsWith(anoSelecionado)) {
-        const mesKey = atendimento.data_atendimento.substring(0, 7)
-        if (meses[mesKey]) {
-          const bruto = calcularValorBruto(atendimento)
-          const horas = calcularHoras(atendimento.checkin, atendimento.checkout)
-          
-          meses[mesKey].quantidadeOS += 1
-          meses[mesKey].faturamentoTotal += bruto
-          meses[mesKey].horasTrabalhadas += horas
-          meses[mesKey].atendimentos.push(atendimento)
+    atendimentosFiltrados.forEach(atendimento => {
+      if (atendimento.data_atendimento) {
+        const mesKey = atendimento.data_atendimento.substring(0, 7) // YYYY-MM
+        if (!meses[mesKey]) {
+          const [ano, mes] = mesKey.split('-')
+          meses[mesKey] = {
+            mes: new Date(parseInt(ano), parseInt(mes) - 1).toLocaleString('pt-BR', { month: 'long', year: 'numeric' }),
+            mesKey: mesKey,
+            quantidadeOS: 0,
+            faturamentoTotal: 0,
+            horasTrabalhadas: 0,
+            atendimentos: []
+          }
         }
+        
+        const bruto = calcularValorBruto(atendimento)
+        const horas = calcularHoras(atendimento.checkin, atendimento.checkout)
+        
+        meses[mesKey].quantidadeOS += 1
+        meses[mesKey].faturamentoTotal += bruto
+        meses[mesKey].horasTrabalhadas += horas
+        meses[mesKey].atendimentos.push(atendimento)
       }
     })
 
-    // Calcular médias
-    Object.keys(meses).forEach(key => {
-      const mes = meses[key]
-      mes.valorMedioOS = mes.quantidadeOS > 0 ? mes.faturamentoTotal / mes.quantidadeOS : 0
-      mes.valorMedioPorHora = mes.horasTrabalhadas > 0 ? mes.faturamentoTotal / mes.horasTrabalhadas : 0
-    })
-
+    // Calcular médias e converter para array ordenado
     return Object.values(meses)
-  }, [atendimentos, anoSelecionado])
+      .sort((a, b) => a.mesKey.localeCompare(b.mesKey))
+      .map(mes => ({
+        ...mes,
+        valorMedioOS: mes.quantidadeOS > 0 ? mes.faturamentoTotal / mes.quantidadeOS : 0,
+        valorMedioPorHora: mes.horasTrabalhadas > 0 ? mes.faturamentoTotal / mes.horasTrabalhadas : 0
+      }))
+  }, [atendimentosFiltrados])
 
-  // Calcular totais do ano
-  const totaisAno = useMemo(() => {
-    return dadosMensais.reduce((acc, mes) => ({
-      quantidadeOS: acc.quantidadeOS + mes.quantidadeOS,
-      faturamentoTotal: acc.faturamentoTotal + mes.faturamentoTotal,
-      horasTrabalhadas: acc.horasTrabalhadas + mes.horasTrabalhadas
-    }), { quantidadeOS: 0, faturamentoTotal: 0, horasTrabalhadas: 0 })
-  }, [dadosMensais])
+  // Calcular totais do período
+  const totaisPeriodo = useMemo(() => {
+    return atendimentosFiltrados.reduce((acc, atendimento) => {
+      const bruto = calcularValorBruto(atendimento)
+      const horas = calcularHoras(atendimento.checkin, atendimento.checkout)
+      return {
+        quantidadeOS: acc.quantidadeOS + 1,
+        faturamentoTotal: acc.faturamentoTotal + bruto,
+        horasTrabalhadas: acc.horasTrabalhadas + horas
+      }
+    }, { quantidadeOS: 0, faturamentoTotal: 0, horasTrabalhadas: 0 })
+  }, [atendimentosFiltrados])
 
-  const mediasAno = useMemo(() => {
+  const mediasPeriodo = useMemo(() => {
     return {
-      valorMedioOS: totaisAno.quantidadeOS > 0 ? totaisAno.faturamentoTotal / totaisAno.quantidadeOS : 0,
-      valorMedioPorHora: totaisAno.horasTrabalhadas > 0 ? totaisAno.faturamentoTotal / totaisAno.horasTrabalhadas : 0
+      valorMedioOS: totaisPeriodo.quantidadeOS > 0 ? totaisPeriodo.faturamentoTotal / totaisPeriodo.quantidadeOS : 0,
+      valorMedioPorHora: totaisPeriodo.horasTrabalhadas > 0 ? totaisPeriodo.faturamentoTotal / totaisPeriodo.horasTrabalhadas : 0
     }
-  }, [totaisAno])
+  }, [totaisPeriodo])
 
   return (
     <div className="px-4 py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Relatórios Mensais</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Análise detalhada dos atendimentos agrupados por mês</p>
+          <h2 className="text-3xl font-bold text-foreground">Relatórios de Atendimentos</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Análise detalhada dos atendimentos no período selecionado</p>
         </div>
         
-        <div className="w-48">
-          <Select value={anoSelecionado} onValueChange={setAnoSelecionado}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {anosDisponiveis.length > 0 ? (
-                anosDisponiveis.map(ano => (
-                  <SelectItem key={ano} value={ano}>{ano}</SelectItem>
-                ))
-              ) : (
-                <SelectItem value={new Date().getFullYear().toString()}>
-                  {new Date().getFullYear()}
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="space-y-1">
+            <Label className="text-xs">Início</Label>
+            <div className="relative">
+              <Input 
+                type="date" 
+                value={dataInicio} 
+                onChange={(e) => setDataInicio(e.target.value)} 
+                className="pl-9 h-9 text-sm"
+              />
+              <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Fim</Label>
+            <div className="relative">
+              <Input 
+                type="date" 
+                value={dataFim} 
+                onChange={(e) => setDataFim(e.target.value)} 
+                className="pl-9 h-9 text-sm"
+              />
+              <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Cards de resumo do ano */}
+      {/* Cards de resumo do período */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -129,8 +139,8 @@ function Relatorios({ atendimentos }) {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totaisAno.quantidadeOS}</div>
-            <p className="text-xs text-muted-foreground">no ano de {anoSelecionado}</p>
+            <div className="text-2xl font-bold">{totaisPeriodo.quantidadeOS}</div>
+            <p className="text-xs text-muted-foreground">no período selecionado</p>
           </CardContent>
         </Card>
 
@@ -141,9 +151,9 @@ function Relatorios({ atendimentos }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {totaisAno.faturamentoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              {totaisPeriodo.faturamentoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </div>
-            <p className="text-xs text-muted-foreground">no ano de {anoSelecionado}</p>
+            <p className="text-xs text-muted-foreground">no período selecionado</p>
           </CardContent>
         </Card>
 
@@ -153,8 +163,8 @@ function Relatorios({ atendimentos }) {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totaisAno.horasTrabalhadas.toFixed(1)}h</div>
-            <p className="text-xs text-muted-foreground">no ano de {anoSelecionado}</p>
+            <div className="text-2xl font-bold">{totaisPeriodo.horasTrabalhadas.toFixed(1)}h</div>
+            <p className="text-xs text-muted-foreground">no período selecionado</p>
           </CardContent>
         </Card>
 
@@ -165,9 +175,9 @@ function Relatorios({ atendimentos }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mediasAno.valorMedioOS.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              {mediasPeriodo.valorMedioOS.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </div>
-            <p className="text-xs text-muted-foreground">média do ano</p>
+            <p className="text-xs text-muted-foreground">média do período</p>
           </CardContent>
         </Card>
 
@@ -178,9 +188,9 @@ function Relatorios({ atendimentos }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mediasAno.valorMedioPorHora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              {mediasPeriodo.valorMedioPorHora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </div>
-            <p className="text-xs text-muted-foreground">média do ano</p>
+            <p className="text-xs text-muted-foreground">média do período</p>
           </CardContent>
         </Card>
       </div>
@@ -188,8 +198,8 @@ function Relatorios({ atendimentos }) {
       {/* Tabela de relatórios mensais */}
       <Card>
         <CardHeader>
-          <CardTitle>Relatório Mensal - {anoSelecionado}</CardTitle>
-          <CardDescription>Dados agrupados por mês com estatísticas detalhadas</CardDescription>
+          <CardTitle>Agrupamento Mensal</CardTitle>
+          <CardDescription>Dados agrupados por mês dentro do período selecionado</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -217,116 +227,104 @@ function Relatorios({ atendimentos }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {dadosMensais.map((mes, index) => (
-                  <tr 
-                    key={index} 
-                    className={`hover:bg-gray-50 transition-colors ${
-                      mes.quantidadeOS > 0 ? 'bg-background' : 'bg-accent opacity-60'
-                    }`}
-                  >
-                    <td className="px-4 py-3 text-sm font-medium text-foreground capitalize">
-                      {mes.mes}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right">
-                      {mes.quantidadeOS > 0 ? (
+                {dadosMensais.length > 0 ? (
+                  dadosMensais.map((mes, index) => (
+                    <tr 
+                      key={index} 
+                      className="hover:bg-accent/50 transition-colors bg-background"
+                    >
+                      <td className="px-4 py-3 text-sm font-medium text-foreground capitalize">
+                        {mes.mes}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                           {mes.quantidadeOS}
                         </span>
-                      ) : (
-                        <span className="text-muted-foreground">0</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right font-medium">
-                      {mes.faturamentoTotal > 0 ? (
-                        mes.faturamentoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                      ) : (
-                        <span className="text-gray-400">R$ 0,00</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right">
-                      {mes.horasTrabalhadas > 0 ? (
-                        `${mes.horasTrabalhadas.toFixed(1)}h`
-                      ) : (
-                        <span className="text-gray-400">0h</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right">
-                      {mes.valorMedioOS > 0 ? (
-                        mes.valorMedioOS.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                      ) : (
-                        <span className="text-gray-400">R$ 0,00</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right">
-                      {mes.valorMedioPorHora > 0 ? (
-                        mes.valorMedioPorHora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                      ) : (
-                        <span className="text-gray-400">R$ 0,00</span>
-                      )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right font-medium">
+                        {mes.faturamentoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right">
+                        {`${mes.horasTrabalhadas.toFixed(1)}h`}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right">
+                        {mes.valorMedioOS.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right">
+                        {mes.valorMedioPorHora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="px-4 py-8 text-center text-muted-foreground">
+                      Nenhum atendimento encontrado no período selecionado.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-gray-300 bg-gray-100 font-bold">
-                  <td className="px-4 py-3 text-sm text-gray-900">
-                    Total do Ano
-                  </td>
-                  <td className="px-4 py-3 text-sm text-right">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-600 text-white">
-                      {totaisAno.quantidadeOS}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-right text-gray-900">
-                    {totaisAno.faturamentoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-right text-gray-900">
-                    {totaisAno.horasTrabalhadas.toFixed(1)}h
-                  </td>
-                  <td className="px-4 py-3 text-sm text-right text-gray-900">
-                    {mediasAno.valorMedioOS.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-right text-gray-900">
-                    {mediasAno.valorMedioPorHora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </td>
-                </tr>
-              </tfoot>
+              {dadosMensais.length > 0 && (
+                <tfoot>
+                  <tr className="border-t-2 border-border bg-accent/30 font-bold">
+                    <td className="px-4 py-3 text-sm text-foreground">
+                      Total do Período
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-600 text-white">
+                        {totaisPeriodo.quantidadeOS}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-foreground">
+                      {totaisPeriodo.faturamentoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-foreground">
+                      {totaisPeriodo.horasTrabalhadas.toFixed(1)}h
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-foreground">
+                      {mediasPeriodo.valorMedioOS.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-foreground">
+                      {mediasPeriodo.valorMedioPorHora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </CardContent>
       </Card>
 
       {/* Insights e observações */}
-      {totaisAno.quantidadeOS > 0 && (
+      {totaisPeriodo.quantidadeOS > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Insights do Ano</CardTitle>
-            <CardDescription>Análise automática dos dados de {anoSelecionado}</CardDescription>
+            <CardTitle>Insights do Período</CardTitle>
+            <CardDescription>Análise automática dos dados selecionados</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                <p className="text-sm text-gray-700">
-                  Você realizou <strong>{totaisAno.quantidadeOS}</strong> atendimentos em {anoSelecionado}, 
-                  totalizando <strong>{totaisAno.horasTrabalhadas.toFixed(1)} horas</strong> de trabalho.
+                <p className="text-sm text-foreground">
+                  Você realizou <strong>{totaisPeriodo.quantidadeOS}</strong> atendimentos no período, 
+                  totalizando <strong>{totaisPeriodo.horasTrabalhadas.toFixed(1)} horas</strong> de trabalho.
                 </p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                <p className="text-sm text-gray-700">
-                  O faturamento total do ano foi de <strong>
-                    {totaisAno.faturamentoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                <p className="text-sm text-foreground">
+                  O faturamento total foi de <strong>
+                    {totaisPeriodo.faturamentoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </strong>, com valor médio de <strong>
-                    {mediasAno.valorMedioOS.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {mediasPeriodo.valorMedioOS.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </strong> por OS.
                 </p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-foreground">
                   Seu valor médio por hora trabalhada é de <strong>
-                    {mediasAno.valorMedioPorHora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {mediasPeriodo.valorMedioPorHora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </strong>.
                 </p>
               </div>
@@ -339,4 +337,3 @@ function Relatorios({ atendimentos }) {
 }
 
 export default Relatorios
-
