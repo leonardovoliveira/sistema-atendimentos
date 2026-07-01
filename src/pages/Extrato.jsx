@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Edit2, Trash2, Save, X, Download, Upload, Calendar } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Plus, Edit2, Trash2, Save, X, Download, Upload, Calendar, CheckSquare, Square } from 'lucide-react'
 
 // Função para calcular horas trabalhadas
 const calcularHoras = (checkin, checkout) => {
@@ -61,7 +62,15 @@ const statusOpcoes = [
 ]
 
 // Componente de linha da tabela para gerenciar o estado de edição individualmente
-const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editandoId, setEditandoId }) => {
+const AtendimentoRow = ({ 
+  atendimento, 
+  handleSalvarEdicao, 
+  handleExcluir, 
+  editandoId, 
+  setEditandoId,
+  isSelected,
+  toggleSelection
+}) => {
   const dataAtendimentoFormatada = atendimento.data_atendimento ? new Date(atendimento.data_atendimento + 'T03:00:00Z').toLocaleDateString('pt-BR') : '';
   const dataPrevistaPagamentoFormatada = atendimento.data_prevista_pagamento ? new Date(atendimento.data_prevista_pagamento + 'T03:00:00Z').toLocaleDateString('pt-BR') : '-';
   const isEditando = editandoId === atendimento.id
@@ -75,6 +84,9 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
   if (isEditando) {
     return (
       <tr key={atendimento.id} className="bg-accent">
+        <td className="px-3 py-2">
+          {/* Checkbox desabilitado durante edição */}
+        </td>
         <td className="px-3 py-2">
           <Input
             type="date"
@@ -225,7 +237,13 @@ const AtendimentoRow = ({ atendimento, handleSalvarEdicao, handleExcluir, editan
   }
 
   return (
-    <tr key={atendimento.id} className="hover:bg-accent transition-colors">
+    <tr key={atendimento.id} className={`hover:bg-accent transition-colors ${isSelected ? 'bg-accent/50' : ''}`}>
+      <td className="px-3 py-2">
+        <Checkbox 
+          checked={isSelected} 
+          onCheckedChange={() => toggleSelection(atendimento.id)}
+        />
+      </td>
       <td className="px-3 py-2 text-sm">{dataAtendimentoFormatada}</td>
       <td className="px-3 py-2 text-sm">{atendimento.checkin}</td>
       <td className="px-3 py-2 text-sm">{atendimento.checkout}</td>
@@ -304,6 +322,8 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
   const [filtroPlataforma, setFiltroPlataforma] = useState('all');
   const [filtroStatus, setFiltroStatus] = useState('all');
   const [localAtendimentos, setLocalAtendimentos] = useState(propAtendimentos);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkStatus, setBulkStatus] = useState('');
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -439,13 +459,47 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
   };
 
   const handleExcluir = (id) => {
-    setLocalAtendimentos(localAtendimentos.filter(att => att.id !== id));
+    if (window.confirm('Tem certeza que deseja excluir este atendimento?')) {
+      setLocalAtendimentos(localAtendimentos.filter(att => att.id !== id));
+      setSelectedIds(selectedIds.filter(sid => sid !== id));
+    }
+  };
+
+  // Lógica de Seleção em Lote
+  const toggleSelection = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === atendimentosFiltrados.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(atendimentosFiltrados.map(a => a.id));
+    }
+  };
+
+  const handleBulkStatusUpdate = () => {
+    if (!bulkStatus) return;
+    
+    const updatedAtendimentos = localAtendimentos.map(att => {
+      if (selectedIds.includes(att.id)) {
+        return { ...att, status: bulkStatus };
+      }
+      return att;
+    });
+    
+    setLocalAtendimentos(updatedAtendimentos);
+    setSelectedIds([]);
+    setBulkStatus('');
+    alert(`${selectedIds.length} atendimentos atualizados com sucesso!`);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Extrato de Atendimentos</h1>
+        <h1 className="text-3xl font-bold text-foreground">Extrato de Atendimentos</h1>
         <div className="flex space-x-2">
           <Button onClick={handleExportar} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-2" />
@@ -464,6 +518,46 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
           </Button>
         </div>
       </div>
+
+      {/* Barra de Ações em Lote */}
+      {selectedIds.length > 0 && (
+        <Card className="bg-primary/5 border-primary/20 sticky top-4 z-10 shadow-lg">
+          <CardContent className="py-3 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-primary">
+                {selectedIds.length} itens selecionados
+              </span>
+              <div className="flex items-center gap-2">
+                <Select value={bulkStatus} onValueChange={setBulkStatus}>
+                  <SelectTrigger className="w-[200px] h-9">
+                    <SelectValue placeholder="Alterar status para..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOpcoes.map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  size="sm" 
+                  onClick={handleBulkStatusUpdate}
+                  disabled={!bulkStatus}
+                >
+                  Aplicar
+                </Button>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setSelectedIds([])}
+            >
+              Cancelar
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -532,39 +626,55 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
       </Card>
 
       {/* Lista de Atendimentos */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-md border border-border">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b bg-accent">
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Data</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Check-in</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Check-out</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Horas</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">OS</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Plataforma</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Prev. Pag.</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Adicionais</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Despesas</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Adiant.</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Bruto</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Líquido</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Ações</th>
+            <tr className="border-b bg-accent/50">
+              <th className="px-3 py-3 text-left w-10">
+                <Checkbox 
+                  checked={atendimentosFiltrados.length > 0 && selectedIds.length === atendimentosFiltrados.length}
+                  onCheckedChange={toggleSelectAll}
+                />
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Data</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Check-in</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Check-out</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Horas</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">OS</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Plataforma</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Prev. Pag.</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Adicionais</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Despesas</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Adiant.</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Bruto</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Líquido</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Ações</th>
             </tr>
           </thead>
-          <tbody>
-            {atendimentosFiltrados.map(atendimento => (
-              <AtendimentoRow
-                key={atendimento.id}
-                atendimento={atendimento}
-                handleSalvarEdicao={handleSalvarEdicao}
-                handleExcluir={handleExcluir}
-                editandoId={editandoId}
-                setEditandoId={setEditandoId}
-              />
-            ))}
+          <tbody className="divide-y divide-border">
+            {atendimentosFiltrados.length > 0 ? (
+              atendimentosFiltrados.map(atendimento => (
+                <AtendimentoRow
+                  key={atendimento.id}
+                  atendimento={atendimento}
+                  handleSalvarEdicao={handleSalvarEdicao}
+                  handleExcluir={handleExcluir}
+                  editandoId={editandoId}
+                  setEditandoId={setEditandoId}
+                  isSelected={selectedIds.includes(atendimento.id)}
+                  toggleSelection={toggleSelection}
+                />
+              ))
+            ) : (
+              <tr>
+                <td colSpan="17" className="px-3 py-8 text-center text-muted-foreground">
+                  Nenhum atendimento encontrado para os filtros selecionados.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
