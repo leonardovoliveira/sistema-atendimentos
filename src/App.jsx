@@ -82,12 +82,12 @@ function Navigation({ toggleDarkMode, darkMode }) {
 
 function App() {
   const [atendimentos, setAtendimentos] = useState([])
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(true)
 
   // Carregar tema do localStorage ao iniciar
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme")
-    if (savedTheme) {
+    if (savedTheme !== null) {
       setDarkMode(JSON.parse(savedTheme))
     }
   }, [])
