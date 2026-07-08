@@ -64,44 +64,24 @@ function Dashboard({ atendimentos }) {
   }, [atendimentos, dataExibicao])
 
   const proximoPagamento = useMemo(() => {
-    console.log("Dashboard: Atendimentos recebidos para proximoPagamento:", atendimentos);
+    // Filtrar apenas atendimentos com status "Aguardando Pagamento"
+    const atendimentosAguardando = atendimentos.filter(a => a.status === 'Aguardando Pagamento' && a.data_prevista_pagamento);
 
-    const hoje = new Date().toISOString().split('T')[0];
-    const atendimentosPendentes = atendimentos.filter(a => {
-      if (!a.data_prevista_pagamento || a.status === 'Pago') return false;
-      return a.data_prevista_pagamento >= hoje;
-    });
+    if (atendimentosAguardando.length === 0) return null;
 
-    if (atendimentosPendentes.length === 0) {
-      console.log("Dashboard: Nenhum atendimento pendente futuro encontrado para proximoPagamento.");
-      return null;
-    }
+    // Encontrar a data de previsão de pagamento mais próxima
+    const datasOrdenadas = [...new Set(atendimentosAguardando.map(a => a.data_prevista_pagamento))].sort();
+    const dataMaisProxima = datasOrdenadas[0];
 
-    const proximo = atendimentosPendentes.reduce((maisProximo, atual) => {
-      if (!maisProximo) return atual;
-      const dataMaisProxima = new Date(maisProximo.data_prevista_pagamento + 'T03:00:00Z');
-      const dataAtual = new Date(atual.data_prevista_pagamento + 'T03:00:00Z');
-      return dataAtual < dataMaisProxima ? atual : maisProximo;
-    }, null);
+    // Somar o valor líquido de todos os atendimentos nessa data específica
+    const atendimentosNaData = atendimentosAguardando.filter(a => a.data_prevista_pagamento === dataMaisProxima);
+    const totalAReceber = atendimentosNaData.reduce((acc, a) => acc + calcularValorLiquido(a), 0);
 
-    if (!proximo) {
-      console.log("Dashboard: Nenhum próximo pagamento encontrado após redução em proximoPagamento.");
-      return null;
-    }
-
-    const valorBruto = calcularValorBruto(proximo);
-    const adiantamento = parseFloat(proximo.adiantamento_recebido) || 0;
-    const valorAReceber = valorBruto - adiantamento;
-
-    const result = {
-      valor: valorAReceber,
-      data: proximo.data_prevista_pagamento,
-      cliente: proximo.nome_cliente,
-      plataforma: proximo.plataforma,
-      status: proximo.status
+    return {
+      valor: totalAReceber,
+      data: dataMaisProxima,
+      quantidade: atendimentosNaData.length
     };
-    console.log("Dashboard: Próximo Pagamento calculado:", result);
-    return result;
   }, [atendimentos]);
 
   const estatisticas = useMemo(() => {
@@ -225,10 +205,12 @@ function Dashboard({ atendimentos }) {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-500">
-                {proximoPagamento ? proximoPagamento.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'N/A'}
+                {proximoPagamento ? proximoPagamento.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00'}
               </div>
               <p className="text-xs text-muted-foreground">
-                {proximoPagamento ? `Previsto para ${new Date(proximoPagamento.data + 'T03:00:00Z').toLocaleDateString('pt-BR')} (${proximoPagamento.plataforma})` : 'Nenhum pagamento pendente futuro.'}
+                {proximoPagamento 
+                  ? `Previsto para ${new Date(proximoPagamento.data + 'T03:00:00Z').toLocaleDateString('pt-BR')} (${proximoPagamento.quantidade} OS)` 
+                  : 'Nenhum pagamento aguardando.'}
               </p>
             </CardContent>
           </Card>
@@ -344,16 +326,16 @@ function Dashboard({ atendimentos }) {
             <CardTitle>Evolução do Faturamento Bruto</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">Comparação mês a mês no ano de {dataExibicao.getFullYear()}</p>
+            <p className="text-sm text-muted-foreground mb-4">Evolução do faturamento bruto ao longo dos meses</p>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={dadosMensais}>
+              <BarChart data={dadosMensais}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" />
                 <YAxis formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 <Tooltip formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 <Legend />
-                <Line type="monotone" dataKey="faturamentoBruto" stroke="#8884d8" name="Faturamento Bruto" />
-              </LineChart>
+                <Bar dataKey="faturamentoBruto" fill="#8884d8" name="Faturamento Bruto" />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
