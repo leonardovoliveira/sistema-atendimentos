@@ -210,7 +210,7 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
     }).sort((a, b) => new Date(a.data_atendimento) - new Date(b.data_atendimento));
   }, [localAtendimentos, dataInicio, dataFim, filtroPlataforma, filtroStatus]);
 
-  const totalLiquidoFiltrado = atendimentosFiltrados.reduce((acc, atendimento) => acc + calcularValorLiquido(atendimento), 0);
+  const totalBrutoFiltrado = atendimentosFiltrados.reduce((acc, atendimento) => acc + calcularValorBruto(atendimento), 0);
 
   const handleExcluir = (id) => {
     if (window.confirm('Tem certeza que deseja excluir este atendimento?')) {
@@ -306,9 +306,9 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
             </Select>
           </div>
           <div className="space-y-2 flex flex-col justify-end">
-            <Label className="text-sm font-medium text-muted-foreground">Total Líquido</Label>
-            <span className="text-2xl font-bold text-green-500">
-              {totalLiquidoFiltrado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            <Label className="text-sm font-medium text-muted-foreground">Total Bruto</Label>
+            <span className="text-2xl font-bold text-blue-500">
+              {totalBrutoFiltrado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </span>
           </div>
         </CardContent>
