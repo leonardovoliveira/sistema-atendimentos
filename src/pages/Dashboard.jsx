@@ -2,10 +2,12 @@ import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { Calendar, TrendingUp, DollarSign, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar, TrendingUp, DollarSign, Clock, ChevronLeft, ChevronRight, Info, X } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 
 function Dashboard({ atendimentos }) {
   const [dataExibicao, setDataExibicao] = useState(new Date())
+  const [isModalAberto, setIsModalAberto] = useState(false)
 
   const calcularHoras = (checkin, checkout) => {
     if (!checkin || !checkout) return 0
@@ -64,23 +66,17 @@ function Dashboard({ atendimentos }) {
   }, [atendimentos, dataExibicao])
 
   const proximoPagamento = useMemo(() => {
-    // Filtrar apenas atendimentos com status "Aguardando Pagamento"
     const atendimentosAguardando = atendimentos.filter(a => a.status === 'Aguardando Pagamento' && a.data_prevista_pagamento);
-
     if (atendimentosAguardando.length === 0) return null;
-
-    // Encontrar a data de previsão de pagamento mais próxima
     const datasOrdenadas = [...new Set(atendimentosAguardando.map(a => a.data_prevista_pagamento))].sort();
     const dataMaisProxima = datasOrdenadas[0];
-
-    // Somar o valor líquido de todos os atendimentos nessa data específica
     const atendimentosNaData = atendimentosAguardando.filter(a => a.data_prevista_pagamento === dataMaisProxima);
     const totalAReceber = atendimentosNaData.reduce((acc, a) => acc + calcularValorLiquido(a), 0);
-
     return {
       valor: totalAReceber,
       data: dataMaisProxima,
-      quantidade: atendimentosNaData.length
+      quantidade: atendimentosNaData.length,
+      atendimentos: atendimentosNaData
     };
   }, [atendimentos]);
 
@@ -197,8 +193,8 @@ function Dashboard({ atendimentos }) {
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
-        <Link to="/extrato" className="block hover:shadow-lg transition-shadow rounded-lg">
-          <Card className="border-l-4 border-green-500">
+        <div onClick={() => proximoPagamento && setIsModalAberto(true)} className="cursor-pointer block hover:shadow-lg transition-shadow rounded-lg">
+          <Card className="border-l-4 border-green-500 h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Próximo Pagamento</CardTitle>
               <DollarSign className="h-4 w-4 text-green-500" />
@@ -207,17 +203,17 @@ function Dashboard({ atendimentos }) {
               <div className="text-2xl font-bold text-green-500">
                 {proximoPagamento ? proximoPagamento.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00'}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
                 {proximoPagamento 
-                  ? `Previsto para ${new Date(proximoPagamento.data + 'T03:00:00Z').toLocaleDateString('pt-BR')} (${proximoPagamento.quantidade} OS)` 
+                  ? <>Previsto para {new Date(proximoPagamento.data + 'T03:00:00Z').toLocaleDateString('pt-BR')} ({proximoPagamento.quantidade} OS) <Info className="w-3 h-3" /></>
                   : 'Nenhum pagamento aguardando.'}
               </p>
             </CardContent>
           </Card>
-        </Link>
+        </div>
 
         <Link to="/extrato" className="block hover:shadow-lg transition-shadow rounded-lg">
-          <Card>
+          <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Atendimentos</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -266,6 +262,40 @@ function Dashboard({ atendimentos }) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Detalhes do Próximo Pagamento */}
+      <Dialog open={isModalAberto} onOpenChange={setIsModalAberto}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Próximo Pagamento</DialogTitle>
+            <DialogDescription>
+              Atendimentos previstos para {proximoPagamento && new Date(proximoPagamento.data + 'T03:00:00Z').toLocaleDateString('pt-BR')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {proximoPagamento?.atendimentos.map((att) => (
+              <div key={att.id} className="flex items-center justify-between p-3 rounded-lg border bg-accent/50">
+                <div className="space-y-1">
+                  <p className="text-sm font-bold">OS: {att.numero_os}</p>
+                  <p className="text-xs text-muted-foreground">Realizado em: {new Date(att.data_atendimento + 'T03:00:00Z').toLocaleDateString('pt-BR')}</p>
+                  <p className="text-xs font-medium text-primary">{att.plataforma}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-green-500">
+                    {calcularValorLiquido(att).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+            <div className="pt-4 border-t flex justify-between items-center">
+              <span className="font-bold">Total a Receber:</span>
+              <span className="text-xl font-bold text-green-500">
+                {proximoPagamento?.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
