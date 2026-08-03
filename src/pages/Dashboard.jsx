@@ -8,6 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 function Dashboard({ atendimentos }) {
   const [dataExibicao, setDataExibicao] = useState(new Date())
   const [isModalAberto, setIsModalAberto] = useState(false)
+  const [isModalCalendarioAberto, setIsModalCalendarioAberto] = useState(false)
+  const [atendimentosDiaSelecionado, setAtendimentosDiaSelecionado] = useState([])
+  const [dataSelecionada, setDataSelecionada] = useState('')
 
   const calcularHoras = (checkin, checkout) => {
     if (!checkin || !checkout) return 0
@@ -125,6 +128,15 @@ function Dashboard({ atendimentos }) {
     })
   }
 
+  const handleDiaClick = (dataStr) => {
+    const atendimentosDoDia = atendimentos.filter(a => a.data_atendimento === dataStr);
+    if (atendimentosDoDia.length > 0) {
+      setAtendimentosDiaSelecionado(atendimentosDoDia);
+      setDataSelecionada(dataStr);
+      setIsModalCalendarioAberto(true);
+    }
+  }
+
   const renderCalendario = () => {
     const mesAtual = dataExibicao.getMonth()
     const anoAtual = dataExibicao.getFullYear()
@@ -142,11 +154,12 @@ function Dashboard({ atendimentos }) {
       dias.push(
         <div
           key={dia}
-          className={`h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
+          onClick={() => handleDiaClick(dataStr)}
+          className={`h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-all cursor-pointer ${
             ehHoje
               ? 'bg-primary text-primary-foreground'
               : temAtendimento
-              ? 'border-2 border-green-500'
+              ? 'border-2 border-green-500 hover:bg-green-500/10'
               : 'text-foreground hover:bg-accent'
           }`}
         >
@@ -272,7 +285,7 @@ function Dashboard({ atendimentos }) {
               Atendimentos previstos para {proximoPagamento && new Date(proximoPagamento.data + 'T03:00:00Z').toLocaleDateString('pt-BR')}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
             {proximoPagamento?.atendimentos.map((att) => (
               <div key={att.id} className="flex items-center justify-between p-3 rounded-lg border bg-accent/50">
                 <div className="space-y-1">
@@ -287,12 +300,50 @@ function Dashboard({ atendimentos }) {
                 </div>
               </div>
             ))}
-            <div className="pt-4 border-t flex justify-between items-center">
-              <span className="font-bold">Total a Receber:</span>
-              <span className="text-xl font-bold text-green-500">
-                {proximoPagamento?.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </span>
-            </div>
+          </div>
+          <div className="pt-4 border-t flex justify-between items-center">
+            <span className="font-bold">Total a Receber:</span>
+            <span className="text-xl font-bold text-green-500">
+              {proximoPagamento?.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </span>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalhes do Calendário */}
+      <Dialog open={isModalCalendarioAberto} onOpenChange={setIsModalCalendarioAberto}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Atendimentos do Dia</DialogTitle>
+            <DialogDescription>
+              Lista de chamados realizados em {dataSelecionada && new Date(dataSelecionada + 'T03:00:00Z').toLocaleDateString('pt-BR')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+            {atendimentosDiaSelecionado.map((att) => (
+              <div key={att.id} className="p-3 rounded-lg border bg-accent/50 space-y-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm font-bold">OS: {att.numero_os}</p>
+                    <p className="text-xs font-medium text-primary">{att.plataforma}</p>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                    att.status === 'Pago' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'
+                  }`}>
+                    {att.status}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Clock className="w-3 h-3" />
+                    <span>{att.checkin} - {att.checkout}</span>
+                  </div>
+                  <div className="text-right font-bold text-foreground">
+                    {calcularValorLiquido(att).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
