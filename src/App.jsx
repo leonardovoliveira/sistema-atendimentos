@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
-import { Home, FileText, BarChart3 } from 'lucide-react'
+import { Home, FileText, BarChart3, Sun, Moon } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Extrato from './pages/Extrato'
 import Relatorios from './pages/Relatorios'
@@ -25,9 +25,10 @@ function Navigation({ toggleDarkMode, darkMode }) {
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <button
                 onClick={toggleDarkMode}
-                className="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors border-transparent text-muted-foreground hover:border-muted hover:text-foreground"
+                className="inline-flex items-center px-3 transition-colors text-muted-foreground hover:text-foreground"
+                title={darkMode ? "Ativar Modo Claro" : "Ativar Modo Escuro"}
               >
-                {darkMode ? "Light Mode" : "Dark Mode"}
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
               <Link
                 to="/"
