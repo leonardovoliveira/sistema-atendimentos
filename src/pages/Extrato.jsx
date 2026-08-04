@@ -171,35 +171,6 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
     reader.readAsText(file)
   }
 
-  const [novoAtendimento, setNovoAtendimento] = useState({
-    data_atendimento: '',
-    checkin: '',
-    checkout: '',
-    numero_os: '',
-    nome_cliente: '',
-    plataforma: plataformas[0],
-    data_prevista_pagamento: '',
-    valor_chamado: '0',
-    ganhos_adicionais: '0',
-    despesas_os: '0',
-    adiantamento_recebido: '0',
-    status: 'Prox Atendimento'
-  })
-
-  const handleAdicionar = () => {
-    if (!novoAtendimento.data_atendimento || !novoAtendimento.numero_os) {
-      alert('Por favor, preencha pelo menos a data e o número da OS')
-      return
-    }
-    const atendimento = { ...novoAtendimento, id: Date.now().toString() }
-    setLocalAtendimentos([...localAtendimentos, atendimento])
-    setNovoAtendimento({
-      data_atendimento: '', checkin: '', checkout: '', numero_os: '', nome_cliente: '',
-      plataforma: plataformas[0], data_prevista_pagamento: '', valor_chamado: '0',
-      ganhos_adicionais: '0', despesas_os: '0', adiantamento_recebido: '0', status: 'Prox Atendimento'
-    });
-  }
-
   const atendimentosFiltrados = useMemo(() => {
     return localAtendimentos.filter(atendimento => {
       const dataAtendimentoStr = atendimento.data_atendimento;
@@ -240,6 +211,12 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
     setIsEditando(false);
   };
 
+  const handleIniciarEdicao = (e) => {
+    e.stopPropagation();
+    setAtendimentoEditado({...atendimentoDetalhe});
+    setIsEditando(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -252,7 +229,7 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
       </div>
 
       {selectedIds.length > 0 && (
-        <Card className="bg-primary/5 border-primary/20 sticky top-4 z-10 shadow-lg">
+        <Card className="bg-primary/5 border-primary/20 sticky top-20 z-10 shadow-lg">
           <CardContent className="py-3 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-primary">{selectedIds.length} itens selecionados</span>
@@ -331,72 +308,96 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {atendimentosFiltrados.map(atendimento => (
-              <AtendimentoRow 
-                key={atendimento.id} 
-                atendimento={atendimento} 
-                handleExcluir={handleExcluir} 
-                isSelected={selectedIds.includes(atendimento.id)} 
-                toggleSelection={toggleSelection}
-                onViewDetails={(att) => { setAtendimentoDetalhe(att); setAtendimentoEditado(att); setIsEditando(false); }}
-              />
-            ))}
+            {atendimentosFiltrados.length > 0 ? (
+              atendimentosFiltrados.map((atendimento) => (
+                <AtendimentoRow 
+                  key={atendimento.id} 
+                  atendimento={atendimento} 
+                  handleExcluir={handleExcluir}
+                  isSelected={selectedIds.includes(atendimento.id)}
+                  toggleSelection={toggleSelection}
+                  onViewDetails={(att) => {
+                    setAtendimentoDetalhe(att);
+                    setIsEditando(false);
+                  }}
+                />
+              ))
+            ) : (
+              <tr>
+                <td colSpan="8" className="px-3 py-8 text-center text-muted-foreground">
+                  Nenhum atendimento encontrado para os filtros selecionados.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Modal de Detalhes */}
+      {/* Modal de Detalhes e Edição */}
       <Dialog open={!!atendimentoDetalhe} onOpenChange={(open) => !open && setAtendimentoDetalhe(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>Detalhes do Atendimento</span>
+            <div className="flex justify-between items-center pr-6">
+              <DialogTitle>{isEditando ? 'Editar Atendimento' : 'Detalhes do Atendimento'}</DialogTitle>
               {!isEditando && (
-                <Button size="sm" variant="outline" onClick={() => setIsEditando(true)}>
+                <Button variant="outline" size="sm" onClick={handleIniciarEdicao}>
                   <Edit2 className="w-4 h-4 mr-2" /> Editar
                 </Button>
               )}
-            </DialogTitle>
-            <DialogDescription>OS: {atendimentoDetalhe?.numero_os} - {atendimentoDetalhe?.nome_cliente}</DialogDescription>
+            </div>
+            <DialogDescription>
+              {isEditando ? 'Altere as informações abaixo e clique em salvar.' : 'Informações completas da Ordem de Serviço.'}
+            </DialogDescription>
           </DialogHeader>
-          
+
           {atendimentoDetalhe && (
-            <div className="grid grid-cols-2 gap-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
               {isEditando ? (
                 <>
-                  <div className="space-y-2"><Label>Data</Label><Input type="date" value={atendimentoEditado.data_atendimento} onChange={e => setAtendimentoEditado({...atendimentoEditado, data_atendimento: e.target.value})} /></div>
-                  <div className="space-y-2"><Label>Cliente</Label><Input value={atendimentoEditado.nome_cliente} onChange={e => setAtendimentoEditado({...atendimentoEditado, nome_cliente: e.target.value})} /></div>
-                  <div className="space-y-2"><Label>Check-in</Label><Input type="time" value={atendimentoEditado.checkin} onChange={e => setAtendimentoEditado({...atendimentoEditado, checkin: e.target.value})} /></div>
-                  <div className="space-y-2"><Label>Check-out</Label><Input type="time" value={atendimentoEditado.checkout} onChange={e => setAtendimentoEditado({...atendimentoEditado, checkout: e.target.value})} /></div>
+                  <div className="space-y-2"><Label>Data</Label><Input type="date" value={atendimentoEditado.data_atendimento} onChange={(e) => setAtendimentoEditado({...atendimentoEditado, data_atendimento: e.target.value})} /></div>
+                  <div className="space-y-2"><Label>Número da OS</Label><Input value={atendimentoEditado.numero_os} onChange={(e) => setAtendimentoEditado({...atendimentoEditado, numero_os: e.target.value})} /></div>
+                  <div className="space-y-2"><Label>Cliente</Label><Input value={atendimentoEditado.nome_cliente} onChange={(e) => setAtendimentoEditado({...atendimentoEditado, nome_cliente: e.target.value})} /></div>
                   <div className="space-y-2"><Label>Plataforma</Label>
-                    <Select value={atendimentoEditado.plataforma} onValueChange={v => setAtendimentoEditado({...atendimentoEditado, plataforma: v})}>
+                    <Select value={atendimentoEditado.plataforma} onValueChange={(v) => setAtendimentoEditado({...atendimentoEditado, plataforma: v})}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{plataformas.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2"><Label>Status</Label>
-                    <Select value={atendimentoEditado.status} onValueChange={v => setAtendimentoEditado({...atendimentoEditado, status: v})}>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2"><Label>Check-in</Label><Input type="time" value={atendimentoEditado.checkin} onChange={(e) => setAtendimentoEditado({...atendimentoEditado, checkin: e.target.value})} /></div>
+                    <div className="space-y-2"><Label>Check-out</Label><Input type="time" value={atendimentoEditado.checkout} onChange={(e) => setAtendimentoEditado({...atendimentoEditado, checkout: e.target.value})} /></div>
+                  </div>
+                  <div className="space-y-2"><Label>Previsão Pagamento</Label><Input type="date" value={atendimentoEditado.data_prevista_pagamento} onChange={(e) => setAtendimentoEditado({...atendimentoEditado, data_prevista_pagamento: e.target.value})} /></div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2"><Label>Valor Chamado</Label><Input type="number" value={atendimentoEditado.valor_chamado} onChange={(e) => setAtendimentoEditado({...atendimentoEditado, valor_chamado: e.target.value})} /></div>
+                    <div className="space-y-2"><Label>Ganhos Extras</Label><Input type="number" value={atendimentoEditado.ganhos_adicionais} onChange={(e) => setAtendimentoEditado({...atendimentoEditado, ganhos_adicionais: e.target.value})} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2"><Label>Despesas OS</Label><Input type="number" value={atendimentoEditado.despesas_os} onChange={(e) => setAtendimentoEditado({...atendimentoEditado, despesas_os: e.target.value})} /></div>
+                    <div className="space-y-2"><Label>Adiantamento</Label><Input type="number" value={atendimentoEditado.adiantamento_recebido} onChange={(e) => setAtendimentoEditado({...atendimentoEditado, adiantamento_recebido: e.target.value})} /></div>
+                  </div>
+                  <div className="space-y-2 md:col-span-2"><Label>Status</Label>
+                    <Select value={atendimentoEditado.status} onValueChange={(v) => setAtendimentoEditado({...atendimentoEditado, status: v})}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{statusOpcoes.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2"><Label>Valor Chamado</Label><Input type="number" value={atendimentoEditado.valor_chamado} onChange={e => setAtendimentoEditado({...atendimentoEditado, valor_chamado: e.target.value})} /></div>
-                  <div className="space-y-2"><Label>Ganhos Adicionais</Label><Input type="number" value={atendimentoEditado.ganhos_adicionais} onChange={e => setAtendimentoEditado({...atendimentoEditado, ganhos_adicionais: e.target.value})} /></div>
-                  <div className="space-y-2"><Label>Despesas OS</Label><Input type="number" value={atendimentoEditado.despesas_os} onChange={e => setAtendimentoEditado({...atendimentoEditado, despesas_os: e.target.value})} /></div>
-                  <div className="space-y-2"><Label>Adiantamento</Label><Input type="number" value={atendimentoEditado.adiantamento_recebido} onChange={e => setAtendimentoEditado({...atendimentoEditado, adiantamento_recebido: e.target.value})} /></div>
-                  <div className="space-y-2"><Label>Prev. Pagamento</Label><Input type="date" value={atendimentoEditado.data_prevista_pagamento} onChange={e => setAtendimentoEditado({...atendimentoEditado, data_prevista_pagamento: e.target.value})} /></div>
                 </>
               ) : (
                 <>
-                  <div className="space-y-1"><Label className="text-muted-foreground">Data</Label><p className="font-medium">{new Date(atendimentoDetalhe.data_atendimento + 'T03:00:00Z').toLocaleDateString('pt-BR')}</p></div>
-                  <div className="space-y-1"><Label className="text-muted-foreground">Horário</Label><p className="font-medium">{atendimentoDetalhe.checkin} às {atendimentoDetalhe.checkout} ({calcularHoras(atendimentoDetalhe.checkin, atendimentoDetalhe.checkout)}h)</p></div>
-                  <div className="space-y-1"><Label className="text-muted-foreground">Plataforma</Label><p className="font-medium">{atendimentoDetalhe.plataforma}</p></div>
-                  <div className="space-y-1"><Label className="text-muted-foreground">Status</Label><p className="font-medium">{atendimentoDetalhe.status}</p></div>
-                  <div className="space-y-1"><Label className="text-muted-foreground">Valor Bruto</Label><p className="font-medium text-blue-500">{calcularValorBruto(atendimentoDetalhe).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
-                  <div className="space-y-1"><Label className="text-muted-foreground">Valor Líquido</Label><p className="font-medium text-green-500">{calcularValorLiquido(atendimentoDetalhe).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
-                  <div className="space-y-1"><Label className="text-muted-foreground">Despesas</Label><p className="font-medium text-red-500">{parseFloat(atendimentoDetalhe.despesas_os || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
-                  <div className="space-y-1"><Label className="text-muted-foreground">Adiantamento</Label><p className="font-medium text-orange-500">{parseFloat(atendimentoDetalhe.adiantamento_recebido || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
-                  <div className="space-y-1"><Label className="text-muted-foreground">Previsão de Pagamento</Label><p className="font-medium">{atendimentoDetalhe.data_prevista_pagamento ? new Date(atendimentoDetalhe.data_prevista_pagamento + 'T03:00:00Z').toLocaleDateString('pt-BR') : '-'}</p></div>
+                  <div className="space-y-1"><p className="text-xs text-muted-foreground">Data do Atendimento</p><p className="font-medium">{new Date(atendimentoDetalhe.data_atendimento + 'T03:00:00Z').toLocaleDateString('pt-BR')}</p></div>
+                  <div className="space-y-1"><p className="text-xs text-muted-foreground">Número da OS</p><p className="font-bold text-lg">{atendimentoDetalhe.numero_os}</p></div>
+                  <div className="space-y-1"><p className="text-xs text-muted-foreground">Cliente</p><p className="font-medium">{atendimentoDetalhe.nome_cliente || 'Não informado'}</p></div>
+                  <div className="space-y-1"><p className="text-xs text-muted-foreground">Plataforma</p><span className={`px-2 py-1 rounded text-xs font-medium ${getPlataformaColorClass(atendimentoDetalhe.plataforma)}`}>{atendimentoDetalhe.plataforma}</span></div>
+                  <div className="space-y-1"><p className="text-xs text-muted-foreground">Horário</p><p className="font-medium">{atendimentoDetalhe.checkin} às {atendimentoDetalhe.checkout} ({calcularHoras(atendimentoDetalhe.checkin, atendimentoDetalhe.checkout)}h)</p></div>
+                  <div className="space-y-1"><p className="text-xs text-muted-foreground">Previsão de Pagamento</p><p className="font-medium">{atendimentoDetalhe.data_prevista_pagamento ? new Date(atendimentoDetalhe.data_prevista_pagamento + 'T03:00:00Z').toLocaleDateString('pt-BR') : 'Não definida'}</p></div>
+                  <div className="space-y-1"><p className="text-xs text-muted-foreground">Status Atual</p><span className="px-2 py-1 rounded text-xs font-bold bg-primary/10 text-primary">{atendimentoDetalhe.status}</span></div>
+                  <div className="p-4 bg-accent/50 rounded-lg md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-1"><p className="text-[10px] uppercase text-muted-foreground">Valor OS</p><p className="font-bold">{parseFloat(atendimentoDetalhe.valor_chamado).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
+                    <div className="space-y-1"><p className="text-[10px] uppercase text-muted-foreground">Extras</p><p className="font-bold text-green-500">+{parseFloat(atendimentoDetalhe.ganhos_adicionais).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
+                    <div className="space-y-1"><p className="text-[10px] uppercase text-muted-foreground">Despesas</p><p className="font-bold text-red-500">-{parseFloat(atendimentoDetalhe.despesas_os).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
+                    <div className="space-y-1"><p className="text-[10px] uppercase text-muted-foreground">Líquido</p><p className="font-bold text-xl text-blue-500">{calcularValorLiquido(atendimentoDetalhe).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
+                  </div>
                 </>
               )}
             </div>
@@ -414,37 +415,6 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Card>
-        <CardHeader><CardTitle>Adicionar Novo Atendimento</CardTitle></CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2"><Label>Data</Label><Input type="date" value={novoAtendimento.data_atendimento} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, data_atendimento: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Check-in</Label><Input type="time" value={novoAtendimento.checkin} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, checkin: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Check-out</Label><Input type="time" value={novoAtendimento.checkout} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, checkout: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Número da OS</Label><Input value={novoAtendimento.numero_os} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, numero_os: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Nome do Cliente</Label><Input value={novoAtendimento.nome_cliente} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, nome_cliente: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Plataforma</Label>
-              <Select value={novoAtendimento.plataforma} onValueChange={(v) => setNovoAtendimento({ ...novoAtendimento, plataforma: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{plataformas.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2"><Label>Previsão de Pagamento</Label><Input type="date" value={novoAtendimento.data_prevista_pagamento} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, data_prevista_pagamento: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Valor do Chamado</Label><Input type="number" value={novoAtendimento.valor_chamado} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, valor_chamado: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Ganhos Adicionais</Label><Input type="number" value={novoAtendimento.ganhos_adicionais} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, ganhos_adicionais: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Despesas na OS</Label><Input type="number" value={novoAtendimento.despesas_os} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, despesas_os: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Adiantamento</Label><Input type="number" value={novoAtendimento.adiantamento_recebido} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, adiantamento_recebido: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Status</Label>
-              <Select value={novoAtendimento.status} onValueChange={(v) => setNovoAtendimento({ ...novoAtendimento, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{statusOpcoes.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="mt-4"><Button onClick={handleAdicionar}><Plus className="w-4 h-4 mr-2" />Adicionar Atendimento</Button></div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

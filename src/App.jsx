@@ -1,13 +1,29 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
-import { Home, FileText, BarChart3, Sun, Moon } from 'lucide-react'
+import { Home, FileText, BarChart3, Sun, Moon, Plus } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Extrato from './pages/Extrato'
 import Relatorios from './pages/Relatorios'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
 import './App.css'
 
-function Navigation({ toggleDarkMode, darkMode }) {
+const plataformas = ['FINDUP', 'EUNERD', 'QUALLITY', 'NS SUPORTE', 'ONIX SUPORTE', 'CO&BE', 'LVO TI']
+const statusOpcoes = [
+  'Prox Atendimento',
+  'em atendimento',
+  'Gerar NF',
+  'NF Gerada',
+  'NF enviada',
+  'Aguardando Pagamento',
+  'Pago'
+]
+
+function Navigation({ toggleDarkMode, darkMode, onNovoChamado }) {
   const location = useLocation()
   
   const isActive = (path) => {
@@ -15,7 +31,7 @@ function Navigation({ toggleDarkMode, darkMode }) {
   }
 
   return (
-      <nav className="bg-background border-b border-border shadow-sm">
+      <nav className="bg-background border-b border-border shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
@@ -65,7 +81,14 @@ function Navigation({ toggleDarkMode, darkMode }) {
               </Link>
             </div>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
+            <Button 
+              onClick={onNovoChamado}
+              className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Novo Chamado
+            </Button>
             <a
               href="https://www.nfse.gov.br/EmissorNacional/"
               target="_blank"
@@ -84,6 +107,21 @@ function Navigation({ toggleDarkMode, darkMode }) {
 function App() {
   const [atendimentos, setAtendimentos] = useState([])
   const [darkMode, setDarkMode] = useState(true)
+  const [isModalNovoAberto, setIsModalNovoAberto] = useState(false)
+  const [novoAtendimento, setNovoAtendimento] = useState({
+    data_atendimento: '',
+    checkin: '',
+    checkout: '',
+    numero_os: '',
+    nome_cliente: '',
+    plataforma: plataformas[0],
+    data_prevista_pagamento: '',
+    valor_chamado: '0',
+    ganhos_adicionais: '0',
+    despesas_os: '0',
+    adiantamento_recebido: '0',
+    status: 'Prox Atendimento'
+  })
 
   // Carregar tema do localStorage ao iniciar
   useEffect(() => {
@@ -120,10 +158,30 @@ function App() {
     localStorage.setItem("atendimentos", JSON.stringify(atendimentos));
   }, [atendimentos])
 
+  const handleAdicionar = () => {
+    if (!novoAtendimento.data_atendimento || !novoAtendimento.numero_os) {
+      alert('Por favor, preencha pelo menos a data e o número da OS')
+      return
+    }
+    const atendimento = { ...novoAtendimento, id: Date.now().toString() }
+    setAtendimentos([...atendimentos, atendimento])
+    setNovoAtendimento({
+      data_atendimento: '', checkin: '', checkout: '', numero_os: '', nome_cliente: '',
+      plataforma: plataformas[0], data_prevista_pagamento: '', valor_chamado: '0',
+      ganhos_adicionais: '0', despesas_os: '0', adiantamento_recebido: '0', status: 'Prox Atendimento'
+    });
+    setIsModalNovoAberto(false);
+  }
+
   return (
     <Router>
       <div className={`min-h-screen ${darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-50"}`}>
-        <Navigation toggleDarkMode={toggleDarkMode} darkMode={darkMode} />
+        <Navigation 
+          toggleDarkMode={toggleDarkMode} 
+          darkMode={darkMode} 
+          onNovoChamado={() => setIsModalNovoAberto(true)} 
+        />
+        
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <Routes>
             <Route path="/" element={<Dashboard atendimentos={atendimentos} />} />
@@ -131,12 +189,87 @@ function App() {
             <Route path="/relatorios" element={<Relatorios atendimentos={atendimentos} />} />
           </Routes>
         </main>
+
+        {/* Modal Global de Novo Chamado */}
+        <Dialog open={isModalNovoAberto} onOpenChange={setIsModalNovoAberto}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Registrar Novo Chamado</DialogTitle>
+              <DialogDescription>Preencha as informações abaixo para cadastrar um novo atendimento no sistema.</DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div className="space-y-2">
+                <Label>Data do Atendimento</Label>
+                <Input type="date" value={novoAtendimento.data_atendimento} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, data_atendimento: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Número da OS</Label>
+                <Input placeholder="Ex: 123456" value={novoAtendimento.numero_os} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, numero_os: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Nome do Cliente</Label>
+                <Input placeholder="Nome do cliente ou local" value={novoAtendimento.nome_cliente} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, nome_cliente: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Plataforma</Label>
+                <Select value={novoAtendimento.plataforma} onValueChange={(v) => setNovoAtendimento({ ...novoAtendimento, plataforma: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{plataformas.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label>Check-in</Label>
+                  <Input type="time" value={novoAtendimento.checkin} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, checkin: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Check-out</Label>
+                  <Input type="time" value={novoAtendimento.checkout} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, checkout: e.target.value })} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Previsão de Pagamento</Label>
+                <Input type="date" value={novoAtendimento.data_prevista_pagamento} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, data_prevista_pagamento: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label>Valor Chamado</Label>
+                  <Input type="number" value={novoAtendimento.valor_chamado} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, valor_chamado: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ganhos Extras</Label>
+                  <Input type="number" value={novoAtendimento.ganhos_adicionais} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, ganhos_adicionais: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label>Despesas OS</Label>
+                  <Input type="number" value={novoAtendimento.despesas_os} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, despesas_os: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Adiantamento</Label>
+                  <Input type="number" value={novoAtendimento.adiantamento_recebido} onChange={(e) => setNovoAtendimento({ ...novoAtendimento, adiantamento_recebido: e.target.value })} />
+                </div>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Status Inicial</Label>
+                <Select value={novoAtendimento.status} onValueChange={(v) => setNovoAtendimento({ ...novoAtendimento, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{statusOpcoes.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsModalNovoAberto(false)}>Cancelar</Button>
+              <Button onClick={handleAdicionar} className="bg-green-600 hover:bg-green-700 text-white">Salvar Atendimento</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Router>
   )
 }
 
 export default App
-
-
-// Forçando novo deploy
