@@ -2,12 +2,13 @@ import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { Calendar, TrendingUp, DollarSign, Clock, ChevronLeft, ChevronRight, Info, X } from 'lucide-react'
+import { Calendar, TrendingUp, DollarSign, Clock, ChevronLeft, ChevronRight, Info, AlertTriangle } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 
 function Dashboard({ atendimentos }) {
   const [dataExibicao, setDataExibicao] = useState(new Date())
   const [isModalAberto, setIsModalAberto] = useState(false)
+  const [isModalAtrasadosAberto, setIsModalAtrasadosAberto] = useState(false)
   const [isModalCalendarioAberto, setIsModalCalendarioAberto] = useState(false)
   const [atendimentosDiaSelecionado, setAtendimentosDiaSelecionado] = useState([])
   const [dataSelecionada, setDataSelecionada] = useState('')
@@ -80,6 +81,17 @@ function Dashboard({ atendimentos }) {
       data: dataMaisProxima,
       quantidade: atendimentosNaData.length,
       atendimentos: atendimentosNaData
+    };
+  }, [atendimentos]);
+
+  const pagamentosAtrasados = useMemo(() => {
+    const atendimentosAtrasados = atendimentos.filter(a => a.status === 'Pagamento Atrasado');
+    if (atendimentosAtrasados.length === 0) return null;
+    const totalAtrasado = atendimentosAtrasados.reduce((acc, a) => acc + calcularValorLiquido(a), 0);
+    return {
+      valor: totalAtrasado,
+      quantidade: atendimentosAtrasados.length,
+      atendimentos: atendimentosAtrasados
     };
   }, [atendimentos]);
 
@@ -205,7 +217,28 @@ function Dashboard({ atendimentos }) {
         <p className="mt-1 text-sm text-muted-foreground">Visão geral dos seus atendimentos e faturamento para {new Date(dataExibicao).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Card Pagamento Atrasado */}
+        <div onClick={() => pagamentosAtrasados && setIsModalAtrasadosAberto(true)} className="cursor-pointer block hover:shadow-lg transition-shadow rounded-lg">
+          <Card className="border-l-4 border-red-500 h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pagamentos Atrasados</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-500">
+                {pagamentosAtrasados ? pagamentosAtrasados.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00'}
+              </div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                {pagamentosAtrasados 
+                  ? <>{pagamentosAtrasados.quantidade} OS com pagamento pendente <Info className="w-3 h-3" /></>
+                  : 'Nenhum pagamento atrasado.'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Card Próximo Pagamento */}
         <div onClick={() => proximoPagamento && setIsModalAberto(true)} className="cursor-pointer block hover:shadow-lg transition-shadow rounded-lg">
           <Card className="border-l-4 border-green-500 h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -237,7 +270,9 @@ function Dashboard({ atendimentos }) {
             </CardContent>
           </Card>
         </Link>
+      </div>
 
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Faturamento Bruto</CardTitle>
@@ -310,6 +345,43 @@ function Dashboard({ atendimentos }) {
         </DialogContent>
       </Dialog>
 
+      {/* Modal de Detalhes de Pagamentos Atrasados */}
+      <Dialog open={isModalAtrasadosAberto} onOpenChange={setIsModalAtrasadosAberto}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-500">
+              <AlertTriangle className="w-5 h-5" />
+              Pagamentos Atrasados
+            </DialogTitle>
+            <DialogDescription>
+              Lista de atendimentos com status de pagamento atrasado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+            {pagamentosAtrasados?.atendimentos.map((att) => (
+              <div key={att.id} className="flex items-center justify-between p-3 rounded-lg border border-red-500/20 bg-red-500/5">
+                <div className="space-y-1">
+                  <p className="text-sm font-bold">OS: {att.numero_os}</p>
+                  <p className="text-xs text-muted-foreground">Vencimento: {att.data_prevista_pagamento ? new Date(att.data_prevista_pagamento + 'T03:00:00Z').toLocaleDateString('pt-BR') : 'Não informada'}</p>
+                  <p className="text-xs font-medium text-primary">{att.plataforma}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-red-500">
+                    {calcularValorLiquido(att).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="pt-4 border-t flex justify-between items-center">
+            <span className="font-bold">Total em Atraso:</span>
+            <span className="text-xl font-bold text-red-500">
+              {pagamentosAtrasados?.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </span>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal de Detalhes do Calendário */}
       <Dialog open={isModalCalendarioAberto} onOpenChange={setIsModalCalendarioAberto}>
         <DialogContent className="max-w-md">
@@ -328,7 +400,9 @@ function Dashboard({ atendimentos }) {
                     <p className="text-xs font-medium text-primary">{att.plataforma}</p>
                   </div>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                    att.status === 'Pago' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'
+                    att.status === 'Pago' ? 'bg-green-500/20 text-green-500' : 
+                    att.status === 'Pagamento Atrasado' ? 'bg-red-500/20 text-red-500' :
+                    'bg-yellow-500/20 text-yellow-500'
                   }`}>
                     {att.status}
                   </span>

@@ -51,6 +51,7 @@ const statusOpcoes = [
   'NF Gerada',
   'NF enviada',
   'Aguardando Pagamento',
+  'Pagamento Atrasado',
   'Pago'
 ]
 
@@ -90,6 +91,7 @@ const AtendimentoRow = ({
         <span className={`px-2 py-1 rounded text-xs font-medium ${
           atendimento.status === 'Pago' ? 'bg-green-100/10 text-green-400' :
           atendimento.status === 'Aguardando Pagamento' ? 'bg-yellow-100/10 text-yellow-400' :
+          atendimento.status === 'Pagamento Atrasado' ? 'bg-red-100/10 text-red-400' :
           'bg-muted text-muted-foreground'
         }`}>
           {atendimento.status}
@@ -391,7 +393,9 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
                   <div className="space-y-1"><p className="text-xs text-muted-foreground">Plataforma</p><span className={`px-2 py-1 rounded text-xs font-medium ${getPlataformaColorClass(atendimentoDetalhe.plataforma)}`}>{atendimentoDetalhe.plataforma}</span></div>
                   <div className="space-y-1"><p className="text-xs text-muted-foreground">Horário</p><p className="font-medium">{atendimentoDetalhe.checkin} às {atendimentoDetalhe.checkout} ({calcularHoras(atendimentoDetalhe.checkin, atendimentoDetalhe.checkout)}h)</p></div>
                   <div className="space-y-1"><p className="text-xs text-muted-foreground">Previsão de Pagamento</p><p className="font-medium">{atendimentoDetalhe.data_prevista_pagamento ? new Date(atendimentoDetalhe.data_prevista_pagamento + 'T03:00:00Z').toLocaleDateString('pt-BR') : 'Não definida'}</p></div>
-                  <div className="space-y-1"><p className="text-xs text-muted-foreground">Status Atual</p><span className="px-2 py-1 rounded text-xs font-bold bg-primary/10 text-primary">{atendimentoDetalhe.status}</span></div>
+                  <div className="space-y-1"><p className="text-xs text-muted-foreground">Status Atual</p><span className={`px-2 py-1 rounded text-xs font-bold ${
+                    atendimentoDetalhe.status === 'Pagamento Atrasado' ? 'bg-red-500/20 text-red-500' : 'bg-primary/10 text-primary'
+                  }`}>{atendimentoDetalhe.status}</span></div>
                   <div className="p-4 bg-accent/50 rounded-lg md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-1"><p className="text-[10px] uppercase text-muted-foreground">Valor OS</p><p className="font-bold">{parseFloat(atendimentoDetalhe.valor_chamado).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
                     <div className="space-y-1"><p className="text-[10px] uppercase text-muted-foreground">Extras</p><p className="font-bold text-green-500">+{parseFloat(atendimentoDetalhe.ganhos_adicionais).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>

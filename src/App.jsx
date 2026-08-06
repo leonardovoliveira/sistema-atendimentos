@@ -20,6 +20,7 @@ const statusOpcoes = [
   'NF Gerada',
   'NF enviada',
   'Aguardando Pagamento',
+  'Pagamento Atrasado',
   'Pago'
 ]
 
