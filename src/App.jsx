@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
-import { Home, FileText, BarChart3, Sun, Moon, Plus } from 'lucide-react'
+import { Home, FileText, BarChart3, Sun, Moon, Plus, AlertTriangle, X } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Extrato from './pages/Extrato'
 import Relatorios from './pages/Relatorios'
@@ -109,6 +109,7 @@ function App() {
   const [atendimentos, setAtendimentos] = useState([])
   const [darkMode, setDarkMode] = useState(true)
   const [isModalNovoAberto, setIsModalNovoAberto] = useState(false)
+  const [notificacaoAtraso, setNotificacaoAtraso] = useState(0)
   const [novoAtendimento, setNovoAtendimento] = useState({
     data_atendimento: '',
     checkin: '',
@@ -159,6 +160,32 @@ function App() {
     localStorage.setItem("atendimentos", JSON.stringify(atendimentos));
   }, [atendimentos])
 
+  // Verificação automática de pagamentos atrasados
+  useEffect(() => {
+    if (atendimentos.length === 0) return;
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const hojeStr = hoje.toISOString().split('T')[0];
+    
+    let novosAtrasos = 0;
+    const novosAtendimentos = atendimentos.map(att => {
+      if (att.data_prevista_pagamento && 
+          att.data_prevista_pagamento < hojeStr && 
+          att.status !== 'Pago' && 
+          att.status !== 'Pagamento Atrasado') {
+        novosAtrasos++;
+        return { ...att, status: 'Pagamento Atrasado' };
+      }
+      return att;
+    });
+
+    if (novosAtrasos > 0) {
+      setAtendimentos(novosAtendimentos);
+      setNotificacaoAtraso(novosAtrasos);
+    }
+  }, [atendimentos.length]); // Executa quando a lista é carregada ou alterada em tamanho
+
   const handleAdicionar = () => {
     if (!novoAtendimento.data_atendimento || !novoAtendimento.numero_os) {
       alert('Por favor, preencha pelo menos a data e o número da OS')
@@ -182,6 +209,24 @@ function App() {
           darkMode={darkMode} 
           onNovoChamado={() => setIsModalNovoAberto(true)} 
         />
+
+        {notificacaoAtraso > 0 && (
+          <div className="bg-red-600 text-white px-4 py-3 shadow-lg flex items-center justify-between animate-in fade-in slide-in-from-top duration-500">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-6 h-6 animate-pulse" />
+              <div>
+                <p className="font-bold">Atenção: Pagamentos Vencidos!</p>
+                <p className="text-sm opacity-90">Identificamos {notificacaoAtraso} novo(s) chamado(s) que passaram da data de pagamento e foram movidos para "Atrasado".</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setNotificacaoAtraso(0)}
+              className="p-1 hover:bg-white/20 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
         
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <Routes>
