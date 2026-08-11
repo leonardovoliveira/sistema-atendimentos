@@ -25,10 +25,11 @@ function Dashboard({ atendimentos }) {
     return (parseFloat(atendimento.valor_chamado) || 0) + (parseFloat(atendimento.ganhos_adicionais) || 0)
   }
 
+  // Saldo líquido a receber: valor bruto menos o adiantamento já recebido.
   const calcularValorLiquido = (atendimento) => {
     const bruto = calcularValorBruto(atendimento)
-    const despesas = parseFloat(atendimento.despesas_os) || 0
-    return bruto - despesas
+    const adiantamento = parseFloat(atendimento.adiantamento_recebido) || 0
+    return bruto - adiantamento
   }
 
   const diasComAtendimentos = useMemo(() => {
@@ -104,13 +105,13 @@ function Dashboard({ atendimentos }) {
       return dataAtendimento.getFullYear() === anoExibicao && dataAtendimento.getMonth() === mesExibicao
     })
     const totalBruto = atendimentosMes.reduce((acc, a) => acc + calcularValorBruto(a), 0)
-    const totalDespesas = atendimentosMes.reduce((acc, a) => acc + (parseFloat(a.despesas_os) || 0), 0)
-    const totalLiquido = totalBruto - totalDespesas
+    const totalAdiantamentos = atendimentosMes.reduce((acc, a) => acc + (parseFloat(a.adiantamento_recebido) || 0), 0)
+    const totalLiquido = totalBruto - totalAdiantamentos
     const totalHoras = atendimentosMes.reduce((acc, a) => acc + calcularHoras(a.checkin, a.checkout), 0)
     return {
       totalAtendimentos: atendimentosMes.length,
       totalBruto,
-      totalDespesas,
+      totalAdiantamentos,
       totalLiquido,
       totalHoras
     }
