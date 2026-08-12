@@ -283,17 +283,21 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Extrato de Atendimentos</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="surface-label">Operacional</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Atendimentos</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Consulte, edite e acompanhe o ciclo financeiro de cada ordem de serviço.</p>
+        </div>
         <div className="grid grid-cols-2 gap-2 sm:flex">
-          <Button onClick={handleExportar} variant="outline" size="sm" className="w-full sm:w-auto"><Download className="mr-2 h-4 w-4" />Exportar</Button>
+          <Button onClick={handleExportar} variant="outline" size="sm" className="h-9 w-full rounded-lg border-border bg-card/70 sm:w-auto"><Download className="mr-2 h-4 w-4" />Exportar</Button>
           <input type="file" ref={fileInputRef} onChange={handleImportar} accept=".json" style={{ display: 'none' }} />
-          <Button onClick={() => fileInputRef.current.click()} variant="outline" size="sm" className="w-full sm:w-auto"><Upload className="mr-2 h-4 w-4" />Importar</Button>
+          <Button onClick={() => fileInputRef.current.click()} variant="outline" size="sm" className="h-9 w-full rounded-lg border-border bg-card/70 sm:w-auto"><Upload className="mr-2 h-4 w-4" />Importar</Button>
         </div>
       </div>
 
       {selectedIds.length > 0 && (
-        <Card className="sticky top-16 z-10 border-primary/20 bg-primary/5 shadow-lg sm:top-20">
+        <Card className="sticky top-20 z-10 rounded-2xl border-primary/25 bg-primary/8 shadow-xl shadow-indigo-950/10">
           <CardContent className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
               <span className="text-sm font-medium text-primary">{selectedIds.length} itens selecionados</span>
@@ -310,24 +314,24 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
         </Card>
       )}
 
-      <Card>
+      <Card className="rounded-2xl">
         <CardContent className="grid grid-cols-1 gap-4 pt-6 sm:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-2">
-            <Label>Data Início</Label>
+            <Label className="surface-label">Data início</Label>
             <div className="relative">
               <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className="pl-10" />
               <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Data Fim</Label>
+            <Label className="surface-label">Data fim</Label>
             <div className="relative">
               <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className="pl-10" />
               <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Plataforma</Label>
+            <Label className="surface-label">Plataforma</Label>
             <Select value={filtroPlataforma} onValueChange={setFiltroPlataforma}>
               <SelectTrigger><SelectValue placeholder="Plataforma" /></SelectTrigger>
               <SelectContent>
@@ -337,7 +341,7 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Status</Label>
+            <Label className="surface-label">Status</Label>
             <Select value={filtroStatus} onValueChange={setFiltroStatus}>
               <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
@@ -347,7 +351,7 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
             </Select>
           </div>
           <div className="flex flex-col justify-end space-y-2 sm:col-span-2 lg:col-span-1">
-            <Label className="text-sm font-medium text-muted-foreground">Total Bruto</Label>
+            <Label className="surface-label">Total bruto</Label>
             <span className="text-2xl font-bold text-blue-500">
               {totalBrutoFiltrado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </span>
@@ -379,10 +383,10 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
         )}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-md border border-border bg-card md:block">
+      <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card/70 shadow-sm md:block">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b bg-muted/50">
+            <tr className="border-b bg-muted/70">
               <th className="px-3 py-3 text-left w-10">
                 <Checkbox checked={atendimentosFiltrados.length > 0 && selectedIds.length === atendimentosFiltrados.length} onCheckedChange={toggleSelectAll} />
               </th>

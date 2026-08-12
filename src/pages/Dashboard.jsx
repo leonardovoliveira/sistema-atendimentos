@@ -288,18 +288,25 @@ function Dashboard({ atendimentos }) {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Dashboard</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Visão geral dos seus atendimentos e faturamento para {new Date(dataExibicao).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="surface-label">Visão geral</p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Resumo financeiro</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Acompanhe atendimentos, recebimentos e produtividade em um só lugar.</p>
+        </div>
+        <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-border bg-card/70 px-3 py-2 text-xs font-semibold capitalize text-muted-foreground shadow-sm">
+          <Calendar className="h-4 w-4 text-primary" />
+          {new Date(dataExibicao).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
         {/* Card Pagamento Atrasado */}
         <div onClick={() => pagamentosAtrasados && setIsModalAtrasadosAberto(true)} className="cursor-pointer block hover:shadow-lg transition-shadow rounded-lg">
-          <Card className="border-l-4 border-red-500 h-full">
+          <Card className="metric-card h-full border-red-400/35 bg-red-500/[0.035]">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pagamentos Atrasados</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <span className="metric-icon bg-red-500/12 text-red-500"><AlertTriangle className="h-4 w-4" /></span>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-500">
@@ -316,10 +323,10 @@ function Dashboard({ atendimentos }) {
 
         {/* Card Próximo Pagamento */}
         <div onClick={() => proximoPagamento && setIsModalAberto(true)} className="cursor-pointer block hover:shadow-lg transition-shadow rounded-lg">
-          <Card className="border-l-4 border-green-500 h-full">
+          <Card className="metric-card h-full border-emerald-400/35 bg-emerald-500/[0.035]">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Próximo Pagamento</CardTitle>
-              <DollarSign className="h-4 w-4 text-green-500" />
+              <span className="metric-icon bg-emerald-500/12 text-emerald-500"><DollarSign className="h-4 w-4" /></span>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-500">
@@ -335,10 +342,10 @@ function Dashboard({ atendimentos }) {
         </div>
 
         <Link to="/extrato" className="block hover:shadow-lg transition-shadow rounded-lg">
-          <Card className="h-full">
+          <Card className="metric-card h-full border-sky-400/30 bg-sky-500/[0.03]">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Atendimentos</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="metric-icon bg-sky-500/12 text-sky-500"><Calendar className="h-4 w-4" /></span>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{estatisticas.totalAtendimentos}</div>
@@ -349,10 +356,10 @@ function Dashboard({ atendimentos }) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-        <Card>
+        <Card className="metric-card border-violet-400/30 bg-violet-500/[0.03]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Faturamento Bruto</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <span className="metric-icon bg-violet-500/12 text-violet-500"><TrendingUp className="h-4 w-4" /></span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -362,10 +369,10 @@ function Dashboard({ atendimentos }) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="metric-card border-indigo-400/30 bg-indigo-500/[0.03]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Faturamento Líquido</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <span className="metric-icon bg-indigo-500/12 text-indigo-500"><DollarSign className="h-4 w-4" /></span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -375,10 +382,10 @@ function Dashboard({ atendimentos }) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="metric-card border-amber-400/30 bg-amber-500/[0.03]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Horas Trabalhadas</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="metric-icon bg-amber-500/12 text-amber-500"><Clock className="h-4 w-4" /></span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{estatisticas.totalHoras.toFixed(1)}h</div>
@@ -498,8 +505,8 @@ function Dashboard({ atendimentos }) {
         </DialogContent>
       </Dialog>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle>Calendário de Atendimentos</CardTitle>
           </CardHeader>

@@ -97,15 +97,17 @@ function Relatorios({ atendimentos }) {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Relatórios Mensais</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Análise detalhada dos atendimentos agrupados por mês</p>
+          <p className="surface-label">Análise de desempenho</p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Relatórios</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Indicadores consolidados para acompanhar a evolução do seu trabalho.</p>
         </div>
         
         <div className="w-full sm:w-48">
+          <p className="mb-2 surface-label">Ano de referência</p>
           <Select value={anoSelecionado} onValueChange={setAnoSelecionado}>
-            <SelectTrigger>
+            <SelectTrigger className="h-10 rounded-xl border-border bg-card/70">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -119,10 +121,10 @@ function Relatorios({ atendimentos }) {
 
       {/* Cards de resumo do ano */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-5">
-        <Card>
+        <Card className="metric-card border-sky-400/30 bg-sky-500/[0.03]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de OS</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <span className="metric-icon bg-sky-500/12 text-sky-500"><FileText className="h-4 w-4" /></span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totaisAno.quantidadeOS}</div>
@@ -130,10 +132,10 @@ function Relatorios({ atendimentos }) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="metric-card border-emerald-400/30 bg-emerald-500/[0.03]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <span className="metric-icon bg-emerald-500/12 text-emerald-500"><DollarSign className="h-4 w-4" /></span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -143,10 +145,10 @@ function Relatorios({ atendimentos }) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="metric-card border-amber-400/30 bg-amber-500/[0.03]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Horas Trabalhadas</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="metric-icon bg-amber-500/12 text-amber-500"><Clock className="h-4 w-4" /></span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totaisAno.horasTrabalhadas.toFixed(1)}h</div>
@@ -154,10 +156,10 @@ function Relatorios({ atendimentos }) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="metric-card border-violet-400/30 bg-violet-500/[0.03]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Valor Médio/OS</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <span className="metric-icon bg-violet-500/12 text-violet-500"><TrendingUp className="h-4 w-4" /></span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -167,10 +169,10 @@ function Relatorios({ atendimentos }) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="metric-card border-indigo-400/30 bg-indigo-500/[0.03]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Valor Médio/Hora</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="metric-icon bg-indigo-500/12 text-indigo-500"><Calendar className="h-4 w-4" /></span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -226,7 +228,7 @@ function Relatorios({ atendimentos }) {
       </div>
 
       {/* Tabela de relatórios mensais para telas amplas */}
-      <Card className="hidden lg:block">
+      <Card className="hidden overflow-hidden rounded-2xl lg:block">
         <CardHeader>
           <CardTitle>Relatório Mensal - {anoSelecionado}</CardTitle>
           <CardDescription>Dados agrupados por mês com estatísticas detalhadas</CardDescription>
@@ -235,7 +237,7 @@ function Relatorios({ atendimentos }) {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="border-b bg-accent">
+                <tr className="border-b bg-muted/70">
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Mês
                   </th>
@@ -338,7 +340,7 @@ function Relatorios({ atendimentos }) {
 
       {/* Insights e observações */}
       {totaisAno.quantidadeOS > 0 && (
-        <Card>
+        <Card className="rounded-2xl">
           <CardHeader>
             <CardTitle>Insights do Ano</CardTitle>
             <CardDescription>Análise automática dos dados de {anoSelecionado}</CardDescription>
