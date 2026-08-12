@@ -120,6 +120,68 @@ const AtendimentoRow = ({
   )
 }
 
+const AtendimentoCardMobile = ({ atendimento, handleExcluir, isSelected, toggleSelection, onViewDetails }) => {
+  const dataAtendimentoFormatada = atendimento.data_atendimento
+    ? new Date(atendimento.data_atendimento + 'T03:00:00Z').toLocaleDateString('pt-BR')
+    : 'Data não informada'
+
+  const statusClass = atendimento.status === 'Pago'
+    ? 'bg-green-100/10 text-green-400'
+    : atendimento.status === 'Aguardando Pagamento'
+    ? 'bg-yellow-100/10 text-yellow-400'
+    : atendimento.status === 'Pagamento Atrasado'
+    ? 'bg-red-100/10 text-red-400'
+    : 'bg-muted text-muted-foreground'
+
+  return (
+    <article
+      onClick={() => onViewDetails(atendimento)}
+      className={`cursor-pointer rounded-lg border p-4 transition-colors hover:bg-accent/50 ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}
+    >
+      <div className="flex items-start gap-3">
+        <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+          <Checkbox checked={isSelected} onCheckedChange={() => toggleSelection(atendimento.id)} aria-label={`Selecionar OS ${atendimento.numero_os}`} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-base font-bold">OS {atendimento.numero_os}</p>
+              <p className="mt-0.5 truncate text-sm text-muted-foreground">{atendimento.nome_cliente || 'Cliente não informado'}</p>
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleExcluir(atendimento.id)
+              }}
+              aria-label={`Excluir OS ${atendimento.numero_os}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">{dataAtendimentoFormatada}</span>
+            <span className={`rounded px-2 py-1 text-xs font-medium ${getPlataformaColorClass(atendimento.plataforma)}`}>
+              {atendimento.plataforma}
+            </span>
+          </div>
+          <div className="mt-3 flex items-end justify-between gap-3 border-t border-border pt-3">
+            <span className={`rounded px-2 py-1 text-xs font-medium ${statusClass}`}>{atendimento.status}</span>
+            <div className="text-right">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Valor líquido</p>
+              <p className="text-base font-bold text-green-500">
+                {calcularValorLiquido(atendimento).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  )
+}
+
 function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setPropAtendimentos = () => {} }) {
   const now = new Date();
   const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -221,35 +283,35 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-foreground">Extrato de Atendimentos</h1>
-        <div className="flex space-x-2">
-          <Button onClick={handleExportar} variant="outline" size="sm"><Download className="w-4 h-4 mr-2" />Exportar</Button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Extrato de Atendimentos</h1>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <Button onClick={handleExportar} variant="outline" size="sm" className="w-full sm:w-auto"><Download className="mr-2 h-4 w-4" />Exportar</Button>
           <input type="file" ref={fileInputRef} onChange={handleImportar} accept=".json" style={{ display: 'none' }} />
-          <Button onClick={() => fileInputRef.current.click()} variant="outline" size="sm"><Upload className="w-4 h-4 mr-2" />Importar</Button>
+          <Button onClick={() => fileInputRef.current.click()} variant="outline" size="sm" className="w-full sm:w-auto"><Upload className="mr-2 h-4 w-4" />Importar</Button>
         </div>
       </div>
 
       {selectedIds.length > 0 && (
-        <Card className="bg-primary/5 border-primary/20 sticky top-20 z-10 shadow-lg">
-          <CardContent className="py-3 flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <Card className="sticky top-16 z-10 border-primary/20 bg-primary/5 shadow-lg sm:top-20">
+          <CardContent className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
               <span className="text-sm font-medium text-primary">{selectedIds.length} itens selecionados</span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2 min-[420px]:flex-row">
                 <Select value={bulkStatus} onValueChange={setBulkStatus}>
-                  <SelectTrigger className="w-[200px] h-9"><SelectValue placeholder="Alterar status para..." /></SelectTrigger>
+                  <SelectTrigger className="h-10 w-full min-[420px]:w-[200px]"><SelectValue placeholder="Alterar status para..." /></SelectTrigger>
                   <SelectContent>{statusOpcoes.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                 </Select>
-                <Button size="sm" onClick={handleBulkStatusUpdate} disabled={!bulkStatus}>Aplicar</Button>
+                <Button size="sm" className="h-10" onClick={handleBulkStatusUpdate} disabled={!bulkStatus}>Aplicar</Button>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>Cancelar</Button>
+            <Button variant="ghost" size="sm" className="self-start sm:self-auto" onClick={() => setSelectedIds([])}>Cancelar</Button>
           </CardContent>
         </Card>
       )}
 
       <Card>
-        <CardContent className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-6">
+        <CardContent className="grid grid-cols-1 gap-4 pt-6 sm:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-2">
             <Label>Data Início</Label>
             <div className="relative">
@@ -284,7 +346,7 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2 flex flex-col justify-end">
+          <div className="flex flex-col justify-end space-y-2 sm:col-span-2 lg:col-span-1">
             <Label className="text-sm font-medium text-muted-foreground">Total Bruto</Label>
             <span className="text-2xl font-bold text-blue-500">
               {totalBrutoFiltrado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
@@ -293,7 +355,31 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
         </CardContent>
       </Card>
 
-      <div className="overflow-x-auto rounded-md border border-border bg-card">
+      <div className="space-y-3 md:hidden">
+        {atendimentosFiltrados.length > 0 ? (
+          atendimentosFiltrados.map((atendimento) => (
+            <AtendimentoCardMobile
+              key={atendimento.id}
+              atendimento={atendimento}
+              handleExcluir={handleExcluir}
+              isSelected={selectedIds.includes(atendimento.id)}
+              toggleSelection={toggleSelection}
+              onViewDetails={(att) => {
+                setAtendimentoDetalhe(att)
+                setIsEditando(false)
+              }}
+            />
+          ))
+        ) : (
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+              Nenhum atendimento encontrado para os filtros selecionados.
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-md border border-border bg-card md:block">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b bg-muted/50">
@@ -337,12 +423,12 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
 
       {/* Modal de Detalhes e Edição */}
       <Dialog open={!!atendimentoDetalhe} onOpenChange={(open) => !open && setAtendimentoDetalhe(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto p-4 sm:w-full sm:p-6">
           <DialogHeader>
-            <div className="flex justify-between items-center pr-6">
+            <div className="flex flex-col items-start gap-3 pr-6 sm:flex-row sm:items-center sm:justify-between">
               <DialogTitle>{isEditando ? 'Editar Atendimento' : 'Detalhes do Atendimento'}</DialogTitle>
               {!isEditando && (
-                <Button variant="outline" size="sm" onClick={handleIniciarEdicao}>
+                <Button variant="outline" size="sm" className="self-stretch sm:self-auto" onClick={handleIniciarEdicao}>
                   <Edit2 className="w-4 h-4 mr-2" /> Editar
                 </Button>
               )}
@@ -396,7 +482,7 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
                   <div className="space-y-1"><p className="text-xs text-muted-foreground">Status Atual</p><span className={`px-2 py-1 rounded text-xs font-bold ${
                     atendimentoDetalhe.status === 'Pagamento Atrasado' ? 'bg-red-500/20 text-red-500' : 'bg-primary/10 text-primary'
                   }`}>{atendimentoDetalhe.status}</span></div>
-                  <div className="p-4 bg-accent/50 rounded-lg md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 gap-3 rounded-lg bg-accent/50 p-3 sm:gap-4 sm:p-4 md:col-span-2 md:grid-cols-4">
                     <div className="space-y-1"><p className="text-[10px] uppercase text-muted-foreground">Valor OS</p><p className="font-bold">{parseFloat(atendimentoDetalhe.valor_chamado).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
                     <div className="space-y-1"><p className="text-[10px] uppercase text-muted-foreground">Extras</p><p className="font-bold text-green-500">+{parseFloat(atendimentoDetalhe.ganhos_adicionais).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
                     <div className="space-y-1"><p className="text-[10px] uppercase text-muted-foreground">Despesas</p><p className="font-bold text-red-500">-{parseFloat(atendimentoDetalhe.despesas_os).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p></div>
@@ -407,14 +493,14 @@ function Extrato({ atendimentos: propAtendimentos = [], setAtendimentos: setProp
             </div>
           )}
           
-          <DialogFooter>
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-0">
             {isEditando ? (
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setIsEditando(false)}>Cancelar</Button>
-                <Button onClick={handleSalvarEdicao}>Salvar Alterações</Button>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <Button variant="outline" className="w-full sm:w-auto" onClick={() => setIsEditando(false)}>Cancelar</Button>
+                <Button className="w-full sm:w-auto" onClick={handleSalvarEdicao}>Salvar Alterações</Button>
               </div>
             ) : (
-              <Button variant="outline" onClick={() => setAtendimentoDetalhe(null)}>Fechar</Button>
+              <Button variant="outline" className="w-full sm:w-auto" onClick={() => setAtendimentoDetalhe(null)}>Fechar</Button>
             )}
           </DialogFooter>
         </DialogContent>

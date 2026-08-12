@@ -168,7 +168,7 @@ function Dashboard({ atendimentos }) {
         <div
           key={dia}
           onClick={() => handleDiaClick(dataStr)}
-          className={`h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-all cursor-pointer ${
+          className={`flex h-9 items-center justify-center rounded-md text-sm font-medium transition-all cursor-pointer sm:h-10 sm:rounded-lg ${
             ehHoje
               ? 'bg-primary text-primary-foreground'
               : temAtendimento
@@ -184,20 +184,20 @@ function Dashboard({ atendimentos }) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <button onClick={() => mudarMes(-1)} className="p-2 rounded-md hover:bg-accent"><ChevronLeft className="w-4 h-4" /></button>
-          <h3 className="text-lg font-semibold">{new Date(anoAtual, mesAtual).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
+          <h3 className="text-base font-semibold capitalize sm:text-lg">{new Date(anoAtual, mesAtual).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
           <button onClick={() => mudarMes(1)} className="p-2 rounded-md hover:bg-accent"><ChevronRight className="w-4 h-4" /></button>
         </div>
-        <div className="grid grid-cols-7 gap-2 mb-2">
+        <div className="mb-2 grid grid-cols-7 gap-1 sm:gap-2">
           {diasSemana.map(dia => (
-            <div key={dia} className="text-center text-xs font-semibold text-muted-foreground">
+            <div key={dia} className="text-center text-[10px] font-semibold text-muted-foreground sm:text-xs">
               {dia}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {dias}
         </div>
-        <div className="flex items-center justify-center gap-4 mt-4 text-xs">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-primary rounded"></div>
             <span className="text-muted-foreground">Hoje</span>
@@ -212,13 +212,13 @@ function Dashboard({ atendimentos }) {
   }
 
   return (
-    <div className="px-4 py-6 space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-foreground">Dashboard</h2>
+        <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Dashboard</h2>
         <p className="mt-1 text-sm text-muted-foreground">Visão geral dos seus atendimentos e faturamento para {new Date(dataExibicao).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
         {/* Card Pagamento Atrasado */}
         <div onClick={() => pagamentosAtrasados && setIsModalAtrasadosAberto(true)} className="cursor-pointer block hover:shadow-lg transition-shadow rounded-lg">
           <Card className="border-l-4 border-red-500 h-full">
@@ -273,7 +273,7 @@ function Dashboard({ atendimentos }) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Faturamento Bruto</CardTitle>
@@ -314,7 +314,7 @@ function Dashboard({ atendimentos }) {
 
       {/* Modal de Detalhes do Próximo Pagamento */}
       <Dialog open={isModalAberto} onOpenChange={setIsModalAberto}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-h-[88vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Detalhes do Próximo Pagamento</DialogTitle>
             <DialogDescription>
@@ -323,13 +323,13 @@ function Dashboard({ atendimentos }) {
           </DialogHeader>
           <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
             {proximoPagamento?.atendimentos.map((att) => (
-              <div key={att.id} className="flex items-center justify-between p-3 rounded-lg border bg-accent/50">
+              <div key={att.id} className="flex flex-col gap-2 rounded-lg border bg-accent/50 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-bold">OS: {att.numero_os}</p>
                   <p className="text-xs text-muted-foreground">Realizado em: {new Date(att.data_atendimento + 'T03:00:00Z').toLocaleDateString('pt-BR')}</p>
                   <p className="text-xs font-medium text-primary">{att.plataforma}</p>
                 </div>
-                <div className="text-right">
+                <div className="text-left sm:text-right">
                   <p className="text-sm font-bold text-green-500">
                     {calcularValorLiquido(att).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </p>
@@ -348,7 +348,7 @@ function Dashboard({ atendimentos }) {
 
       {/* Modal de Detalhes de Pagamentos Atrasados */}
       <Dialog open={isModalAtrasadosAberto} onOpenChange={setIsModalAtrasadosAberto}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-h-[88vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-500">
               <AlertTriangle className="w-5 h-5" />
@@ -360,13 +360,13 @@ function Dashboard({ atendimentos }) {
           </DialogHeader>
           <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
             {pagamentosAtrasados?.atendimentos.map((att) => (
-              <div key={att.id} className="flex items-center justify-between p-3 rounded-lg border border-red-500/20 bg-red-500/5">
+              <div key={att.id} className="flex flex-col gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-bold">OS: {att.numero_os}</p>
                   <p className="text-xs text-muted-foreground">Vencimento: {att.data_prevista_pagamento ? new Date(att.data_prevista_pagamento + 'T03:00:00Z').toLocaleDateString('pt-BR') : 'Não informada'}</p>
                   <p className="text-xs font-medium text-primary">{att.plataforma}</p>
                 </div>
-                <div className="text-right">
+                <div className="text-left sm:text-right">
                   <p className="text-sm font-bold text-red-500">
                     {calcularValorLiquido(att).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </p>
@@ -385,7 +385,7 @@ function Dashboard({ atendimentos }) {
 
       {/* Modal de Detalhes do Calendário */}
       <Dialog open={isModalCalendarioAberto} onOpenChange={setIsModalCalendarioAberto}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-h-[88vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Atendimentos do Dia</DialogTitle>
             <DialogDescription>
@@ -439,9 +439,9 @@ function Dashboard({ atendimentos }) {
           </CardHeader>
           <CardContent>
             {faturamentoPorPlataforma.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={faturamentoPorPlataforma}>
-                  <XAxis dataKey="plataforma" />
+                  <XAxis dataKey="plataforma" fontSize={10} interval="preserveStartEnd" />
                   <YAxis />
                   <Tooltip formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                   <Legend />
@@ -462,7 +462,7 @@ function Dashboard({ atendimentos }) {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">Comparação de faturamento bruto, despesas e líquido no ano de {dataExibicao.getFullYear()}</p>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={260}>
               <LineChart data={dadosMensais}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" />
@@ -483,7 +483,7 @@ function Dashboard({ atendimentos }) {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">Evolução do faturamento bruto ao longo dos meses</p>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={260}>
               <BarChart data={dadosMensais}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" />

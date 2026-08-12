@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
-import { Home, FileText, BarChart3, Sun, Moon, Plus, AlertTriangle, X } from 'lucide-react'
+import { Home, FileText, BarChart3, Sun, Moon, Plus, AlertTriangle, X, Menu, ExternalLink } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Extrato from './pages/Extrato'
 import Relatorios from './pages/Relatorios'
@@ -26,81 +26,136 @@ const statusOpcoes = [
 
 function Navigation({ toggleDarkMode, darkMode, onNovoChamado }) {
   const location = useLocation()
-  
-  const isActive = (path) => {
-    return location.pathname === path
-  }
+  const [menuAberto, setMenuAberto] = useState(false)
+
+  const itensNavegacao = [
+    { path: '/', label: 'Dashboard', icon: Home },
+    { path: '/extrato', label: 'Extrato de Atendimentos', icon: FileText },
+    { path: '/relatorios', label: 'Relatórios Mensais', icon: BarChart3 }
+  ]
+
+  const isActive = (path) => location.pathname === path
 
   return (
-      <nav className="bg-background border-b border-border shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Link to="/" className="text-xl font-bold text-foreground hover:text-blue-500 transition-colors">LVO TI</Link>
-            </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <button
-                onClick={toggleDarkMode}
-                className="inline-flex items-center px-3 transition-colors text-muted-foreground hover:text-foreground"
-                title={darkMode ? "Ativar Modo Claro" : "Ativar Modo Escuro"}
-              >
-                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </button>
-              <Link
-                to="/"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
-                  isActive('/')
-                    ? 'border-blue-500 text-foreground'
-                    : 'border-transparent text-muted-foreground hover:border-muted hover:text-foreground'
-                }`}
-              >
-                <Home className="w-4 h-4 mr-2" />
-                Dashboard
-              </Link>
-              <Link
-                to="/extrato"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
-                  isActive('/extrato')
-                    ? 'border-blue-500 text-foreground'
-                    : 'border-transparent text-muted-foreground hover:border-muted hover:text-foreground'
-                }`}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Extrato de Atendimentos
-              </Link>
-              <Link
-                to="/relatorios"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
-                  isActive('/relatorios')
-                    ? 'border-blue-500 text-foreground'
-                    : 'border-transparent text-muted-foreground hover:border-muted hover:text-foreground'
-                }`}
-              >
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Relatórios Mensais
-              </Link>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button 
-              onClick={onNovoChamado}
-              className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+    <nav className="sticky top-0 z-50 border-b border-border bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="mx-auto max-w-7xl px-3 sm:px-5 lg:px-8">
+        <div className="flex h-14 items-center justify-between gap-2 sm:h-16">
+          <Link to="/" className="shrink-0 text-lg font-bold tracking-tight text-foreground transition-colors hover:text-blue-500 sm:text-xl">
+            LVO TI
+          </Link>
+
+          <div className="hidden h-full items-center gap-1 lg:flex">
+            <button
+              onClick={toggleDarkMode}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              title={darkMode ? 'Ativar Modo Claro' : 'Ativar Modo Escuro'}
+              aria-label={darkMode ? 'Ativar Modo Claro' : 'Ativar Modo Escuro'}
             >
-              <Plus className="w-4 h-4" />
-              Novo Chamado
+              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+            {itensNavegacao.map(({ path, label, icon: Icon }) => (
+              <Link
+                key={path}
+                to={path}
+                className={`inline-flex h-full items-center gap-2 border-b-2 px-2 pt-1 text-sm font-medium transition-colors ${
+                  isActive(path)
+                    ? 'border-blue-500 text-foreground'
+                    : 'border-transparent text-muted-foreground hover:border-muted hover:text-foreground'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Button
+              onClick={onNovoChamado}
+              size="sm"
+              className="h-9 bg-green-600 px-2.5 text-white hover:bg-green-700 sm:px-3"
+              aria-label="Novo chamado"
+            >
+              <Plus className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Novo Chamado</span>
             </Button>
+
             <a
               href="https://www.nfse.gov.br/EmissorNacional/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+              className="hidden h-9 items-center gap-1.5 rounded-md bg-blue-600 px-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 lg:inline-flex"
             >
               Emitir NF
+              <ExternalLink className="h-3.5 w-3.5" />
             </a>
+
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 lg:hidden"
+              onClick={() => setMenuAberto(true)}
+              aria-label="Abrir menu de navegação"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
+
+      {menuAberto && (
+        <div className="lg:hidden">
+          <button
+            className="fixed inset-0 z-50 bg-black/50"
+            onClick={() => setMenuAberto(false)}
+            aria-label="Fechar menu de navegação"
+          />
+          <aside className="fixed inset-y-0 right-0 z-[60] flex w-[86vw] max-w-sm flex-col border-l border-border bg-background shadow-2xl animate-in slide-in-from-right duration-200" aria-label="Menu de navegação">
+            <div className="flex items-start justify-between border-b border-border px-5 py-5">
+              <div>
+                <p className="text-xl font-semibold">LVO TI</p>
+                <p className="mt-1 text-sm text-muted-foreground">Navegação e atalhos</p>
+              </div>
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMenuAberto(false)} aria-label="Fechar menu">
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-3 py-4">
+              {itensNavegacao.map(({ path, label, icon: Icon }) => (
+                <Link
+                  key={path}
+                  to={path}
+                  onClick={() => setMenuAberto(false)}
+                  className={`flex min-h-12 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors ${
+                    isActive(path) ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-accent'
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  {label}
+                </Link>
+              ))}
+              <div className="my-2 border-t border-border" />
+              <button
+                onClick={toggleDarkMode}
+                className="flex min-h-12 items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                {darkMode ? 'Ativar Modo Claro' : 'Ativar Modo Escuro'}
+              </button>
+              <a
+                href="https://www.nfse.gov.br/EmissorNacional/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-12 items-center gap-3 rounded-lg px-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                <ExternalLink className="h-5 w-5" />
+                Emitir Nota Fiscal
+              </a>
+            </div>
+          </aside>
+        </div>
+      )}
     </nav>
   )
 }
@@ -211,24 +266,25 @@ function App() {
         />
 
         {notificacaoAtraso > 0 && (
-          <div className="bg-red-600 text-white px-4 py-3 shadow-lg flex items-center justify-between animate-in fade-in slide-in-from-top duration-500">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-6 h-6 animate-pulse" />
-              <div>
+          <div className="flex items-start justify-between gap-3 bg-red-600 px-4 py-3 text-white shadow-lg animate-in fade-in slide-in-from-top duration-500 sm:items-center sm:px-6">
+            <div className="flex min-w-0 items-start gap-3 sm:items-center">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 animate-pulse sm:mt-0 sm:h-6 sm:w-6" />
+              <div className="min-w-0">
                 <p className="font-bold">Atenção: Pagamentos Vencidos!</p>
                 <p className="text-sm opacity-90">Identificamos {notificacaoAtraso} novo(s) chamado(s) que passaram da data de pagamento e foram movidos para "Atrasado".</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setNotificacaoAtraso(0)}
-              className="p-1 hover:bg-white/20 rounded-full transition-colors"
+              className="shrink-0 rounded-full p-1 transition-colors hover:bg-white/20"
+              aria-label="Fechar notificação"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </button>
           </div>
         )}
         
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <main className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
           <Routes>
             <Route path="/" element={<Dashboard atendimentos={atendimentos} />} />
             <Route path="/extrato" element={<Extrato atendimentos={atendimentos} setAtendimentos={setAtendimentos} />} />
@@ -238,7 +294,7 @@ function App() {
 
         {/* Modal Global de Novo Chamado */}
         <Dialog open={isModalNovoAberto} onOpenChange={setIsModalNovoAberto}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto sm:w-full">
             <DialogHeader>
               <DialogTitle>Registrar Novo Chamado</DialogTitle>
               <DialogDescription>Preencha as informações abaixo para cadastrar um novo atendimento no sistema.</DialogDescription>
@@ -307,9 +363,9 @@ function App() {
               </div>
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsModalNovoAberto(false)}>Cancelar</Button>
-              <Button onClick={handleAdicionar} className="bg-green-600 hover:bg-green-700 text-white">Salvar Atendimento</Button>
+            <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-0">
+              <Button variant="outline" className="w-full sm:w-auto" onClick={() => setIsModalNovoAberto(false)}>Cancelar</Button>
+              <Button onClick={handleAdicionar} className="w-full bg-green-600 text-white hover:bg-green-700 sm:w-auto">Salvar Atendimento</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
