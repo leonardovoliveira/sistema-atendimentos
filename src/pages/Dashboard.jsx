@@ -1,9 +1,84 @@
-import { useState, useMemo } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Calendar, TrendingUp, DollarSign, Clock, ChevronLeft, ChevronRight, Info, AlertTriangle } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+
+const DashboardCharts = lazy(() => import('@/components/DashboardCharts'))
+
+function ChartLoadingPlaceholder({ tipo }) {
+  if (tipo === 'plataforma') {
+    return (
+      <Card className="min-h-[292px]">
+        <CardHeader>
+          <CardTitle>Faturamento por Plataforma</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[220px] animate-pulse rounded-md bg-muted" aria-label="Carregando gráfico por plataforma" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {['Faturamento Mensal', 'Evolução do Faturamento Bruto'].map((titulo) => (
+        <Card key={titulo} className="min-h-[360px]">
+          <CardHeader>
+            <CardTitle>{titulo}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[260px] animate-pulse rounded-md bg-muted" aria-label={`Carregando ${titulo}`} />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
+function DeferredDashboardCharts({ tipo, faturamentoPorPlataforma, dadosMensais, anoExibicao }) {
+  const containerRef = useRef(null)
+  const [deveCarregar, setDeveCarregar] = useState(false)
+
+  useEffect(() => {
+    if (!containerRef.current) return undefined
+
+    if (!('IntersectionObserver' in window)) {
+      setDeveCarregar(true)
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(
+      ([entrada]) => {
+        if (entrada.isIntersecting) {
+          setDeveCarregar(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '320px 0px' }
+    )
+
+    observer.observe(containerRef.current)
+    return () => observer.disconnect()
+  }, [])
+
+  const placeholder = <ChartLoadingPlaceholder tipo={tipo} />
+
+  return (
+    <div ref={containerRef}>
+      {deveCarregar ? (
+        <Suspense fallback={placeholder}>
+          <DashboardCharts
+            tipo={tipo}
+            faturamentoPorPlataforma={faturamentoPorPlataforma}
+            dadosMensais={dadosMensais}
+            anoExibicao={anoExibicao}
+          />
+        </Suspense>
+      ) : placeholder}
+    </div>
+  )
+}
 
 function Dashboard({ atendimentos }) {
   const [dataExibicao, setDataExibicao] = useState(new Date())
@@ -433,69 +508,17 @@ function Dashboard({ atendimentos }) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Faturamento por Plataforma</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {faturamentoPorPlataforma.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={faturamentoPorPlataforma}>
-                  <XAxis dataKey="plataforma" fontSize={10} interval="preserveStartEnd" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
-                  <Legend />
-                  <Bar dataKey="faturamento" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-muted-foreground">Nenhum faturamento registrado para este mês.</p>
-            )}
-          </CardContent>
-        </Card>
+        <DeferredDashboardCharts
+          tipo="plataforma"
+          faturamentoPorPlataforma={faturamentoPorPlataforma}
+        />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Faturamento Mensal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">Comparação de faturamento bruto, despesas e líquido no ano de {dataExibicao.getFullYear()}</p>
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={dadosMensais}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
-                <YAxis formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
-                <Tooltip formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
-                <Legend />
-                <Line type="monotone" dataKey="faturamentoBruto" stroke="#8884d8" name="Faturamento Bruto" />
-                <Line type="monotone" dataKey="despesas" stroke="#82ca9d" name="Despesas" />
-                <Line type="monotone" dataKey="faturamentoLiquido" stroke="#ffc658" name="Faturamento Líquido" />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Evolução do Faturamento Bruto</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">Evolução do faturamento bruto ao longo dos meses</p>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={dadosMensais}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
-                <YAxis formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
-                <Tooltip formatter={(value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
-                <Legend />
-                <Bar dataKey="faturamentoBruto" fill="#8884d8" name="Faturamento Bruto" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+      <DeferredDashboardCharts
+        tipo="mensal"
+        dadosMensais={dadosMensais}
+        anoExibicao={dataExibicao.getFullYear()}
+      />
     </div>
   )
 }

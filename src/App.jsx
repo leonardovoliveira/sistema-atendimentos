@@ -1,9 +1,6 @@
-import { useState, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
 import { Home, FileText, BarChart3, Sun, Moon, Plus, AlertTriangle, X, Menu, ExternalLink } from 'lucide-react'
-import Dashboard from './pages/Dashboard'
-import Extrato from './pages/Extrato'
-import Relatorios from './pages/Relatorios'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,6 +8,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
 import './App.css'
+
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Extrato = lazy(() => import('./pages/Extrato'))
+const Relatorios = lazy(() => import('./pages/Relatorios'))
+
+function PageLoadingFallback() {
+  return (
+    <div className="space-y-4" role="status" aria-live="polite" aria-label="Carregando página">
+      <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((item) => <div key={item} className="h-32 animate-pulse rounded-lg bg-muted" />)}
+      </div>
+    </div>
+  )
+}
 
 const plataformas = ['FINDUP', 'EUNERD', 'QUALLITY', 'NS SUPORTE', 'ONIX SUPORTE', 'CO&BE', 'LVO TI']
 const statusOpcoes = [
@@ -285,11 +297,13 @@ function App() {
         )}
         
         <main className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-          <Routes>
-            <Route path="/" element={<Dashboard atendimentos={atendimentos} />} />
-            <Route path="/extrato" element={<Extrato atendimentos={atendimentos} setAtendimentos={setAtendimentos} />} />
-            <Route path="/relatorios" element={<Relatorios atendimentos={atendimentos} />} />
-          </Routes>
+          <Suspense fallback={<PageLoadingFallback />}>
+            <Routes>
+              <Route path="/" element={<Dashboard atendimentos={atendimentos} />} />
+              <Route path="/extrato" element={<Extrato atendimentos={atendimentos} setAtendimentos={setAtendimentos} />} />
+              <Route path="/relatorios" element={<Relatorios atendimentos={atendimentos} />} />
+            </Routes>
+          </Suspense>
         </main>
 
         {/* Modal Global de Novo Chamado */}
