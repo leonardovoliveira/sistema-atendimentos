@@ -24,6 +24,22 @@ function PageLoadingFallback() {
   )
 }
 
+function AnimatedRoutes({ atendimentos, setAtendimentos }) {
+  const location = useLocation()
+
+  return (
+    <div key={location.pathname} className="page-transition">
+      <Suspense fallback={<PageLoadingFallback />}>
+        <Routes location={location}>
+          <Route path="/" element={<Dashboard atendimentos={atendimentos} />} />
+          <Route path="/extrato" element={<Extrato atendimentos={atendimentos} setAtendimentos={setAtendimentos} />} />
+          <Route path="/relatorios" element={<Relatorios atendimentos={atendimentos} />} />
+        </Routes>
+      </Suspense>
+    </div>
+  )
+}
+
 const plataformas = ['FINDUP', 'EUNERD', 'QUALLITY', 'NS SUPORTE', 'ONIX SUPORTE', 'CO&BE', 'LVO TI']
 const statusOpcoes = [
   'Prox Atendimento',
@@ -188,6 +204,8 @@ function App() {
   // Salvar tema no localStorage sempre que houver alteração
   useEffect(() => {
     localStorage.setItem("theme", JSON.stringify(darkMode))
+    document.documentElement.style.colorScheme = darkMode ? 'dark' : 'light'
+
     if (darkMode) {
       document.documentElement.classList.add("dark")
     } else {
@@ -283,13 +301,7 @@ function App() {
         )}
         
         <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <Suspense fallback={<PageLoadingFallback />}>
-            <Routes>
-              <Route path="/" element={<Dashboard atendimentos={atendimentos} />} />
-              <Route path="/extrato" element={<Extrato atendimentos={atendimentos} setAtendimentos={setAtendimentos} />} />
-              <Route path="/relatorios" element={<Relatorios atendimentos={atendimentos} />} />
-            </Routes>
-          </Suspense>
+          <AnimatedRoutes atendimentos={atendimentos} setAtendimentos={setAtendimentos} />
         </main>
 
         {/* Modal Global de Novo Chamado */}
